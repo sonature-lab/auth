@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AuthController (POST /api/v1/auth/signup, POST /api/v1/auth/login)
   - Auth exceptions (EmailAlreadyExists, InvalidCredentials, UserSuspended)
   - Unit tests (6) + Integration tests (7)
+- **Sprint 2.3**: Social Login (Google, GitHub, Kakao)
+  - CustomOAuth2UserService (social profile → UserEntity mapping)
+  - OAuth2UserProfileMapper with provider-specific strategies
+  - Account linking (same email LOCAL account auto-link)
+  - OAuth2LoginSuccessHandler (JWT token pair issuance on social login)
+  - spring-boot-starter-oauth2-client integration
+  - OAuth2 Client Registration config (env var based)
+  - Unit tests (13) + Integration tests (6)
 - **Sprint 2.2**: OAuth2 Authorization Server
   - Spring Authorization Server 1.4.5 integration
   - Authorization Code + PKCE flow
@@ -28,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - SecurityConfig split into AuthorizationServerConfig (@Order 1) + defaultSecurityFilterChain (@Order 2)
 - SecurityConfig now only provides PasswordEncoder bean
+- UserEntity.provider, UserEntity.providerId changed from val to var (for account linking)
+- defaultSecurityFilterChain now includes .oauth2Login() with custom user service
 
 ### Security
 - Password hashing via DelegatingPasswordEncoder (bcrypt default)

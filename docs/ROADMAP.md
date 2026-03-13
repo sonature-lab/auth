@@ -72,14 +72,17 @@
 - [x] Dev 환경 자동 클라이언트 등록 (public + confidential)
 - [x] 통합 테스트 7개
 
-### Sprint 2.3 - Social Login (NEXT)
-- [ ] OAuth2 Client 설정 (Google, GitHub, Kakao)
-- [ ] Social Login flow (redirect → callback → token)
-- [ ] User 자동 생성/연동 (소셜 계정 ↔ 로컬 계정)
-- [ ] Provider별 프로필 매핑
-- [ ] 테스트
+### Sprint 2.3 - Social Login ✅
+- [x] spring-boot-starter-oauth2-client 의존성 추가
+- [x] OAuth2 Client Registration (Google, GitHub, Kakao) 환경변수 기반
+- [x] CustomOAuth2UserService (소셜 프로필 → UserEntity 자동 생성/연동)
+- [x] OAuth2UserProfileMapper (Provider별 프로필 매핑 전략)
+- [x] 소셜 계정 ↔ 로컬 계정 연동 (같은 email 자동 링크)
+- [x] OAuth2LoginSuccessHandler (로그인 성공 → JWT 토큰 쌍 발급)
+- [x] SecurityConfig에 .oauth2Login() 추가
+- [x] 단위 테스트 13개 + 통합 테스트 6개
 
-### Sprint 2.4 - OIDC + Consent
+### Sprint 2.4 - OIDC + Consent (NEXT)
 - [ ] Consent 화면 구현 (Thymeleaf 최소 UI)
 - [ ] Scope 관리 세분화
 - [ ] 통합 테스트 + SDK 업데이트

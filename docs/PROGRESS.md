@@ -4,6 +4,48 @@
 
 ---
 
+## 2026-03-14 - Sprint 2.3: Social Login (Google, GitHub, Kakao)
+
+### Completed
+- Infrastructure Layer
+  - `CustomOAuth2UserService` — 소셜 로그인 시 사용자 자동 생성/연동
+  - `OAuth2UserProfileMapper` — Provider별 프로필 매핑 (Google, GitHub, Kakao)
+  - `OAuth2UserProfile` — 소셜 프로필 VO
+  - `OAuth2LoginSuccessHandler` — 로그인 성공 시 JWT 토큰 쌍 발급
+- Domain Layer
+  - `UserEntity.provider`, `UserEntity.providerId` — val → var 변경 (계정 연동 지원)
+- Configuration
+  - `application.yml` — OAuth2 Client Registration (Google, GitHub, Kakao) 환경변수 기반
+  - `application-test.yml` — 테스트용 OAuth2 Client 설정
+  - `AuthorizationServerConfig` — `.oauth2Login()` 추가
+- Build
+  - `spring-boot-starter-oauth2-client` 의존성 추가
+- 테스트 작성
+  - `OAuth2UserProfileMapperTest` (7 tests)
+  - `CustomOAuth2UserServiceTest` (4 tests)
+  - `OAuth2LoginSuccessHandlerTest` (2 tests)
+  - `SocialLoginIntegrationTest` (6 tests)
+  - 총 133개 테스트 전체 통과
+
+### Decisions Made
+1. **프로필 매핑**: OAuth2UserProfileMapper (object) — Strategy 패턴으로 provider별 분리
+2. **계정 연동**: 동일 email LOCAL 계정 자동 연결 (provider/providerId 업데이트)
+3. **email 필수**: 소셜 로그인 시 email 미제공 → OAuth2AuthenticationException
+4. **토큰 발급**: 소셜 로그인 성공 → JSON 응답 (accessToken + refreshToken)
+5. **환경변수**: GOOGLE_CLIENT_ID/SECRET, GITHUB_CLIENT_ID/SECRET, KAKAO_CLIENT_ID/SECRET
+
+### Environment Variables (New)
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret |
+| `GITHUB_CLIENT_ID` | GitHub OAuth2 Client ID |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth2 Client Secret |
+| `KAKAO_CLIENT_ID` | Kakao OAuth2 Client ID |
+| `KAKAO_CLIENT_SECRET` | Kakao OAuth2 Client Secret |
+
+---
+
 ## 2026-03-13 - Sprint 2.2: OAuth2 Authorization Server
 
 ### Completed

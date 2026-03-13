@@ -35,10 +35,10 @@ class UserEntity(
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    val provider: AuthProvider = AuthProvider.LOCAL,
+    var provider: AuthProvider = AuthProvider.LOCAL,
 
     @Column(name = "provider_id", length = 255)
-    val providerId: String? = null,
+    var providerId: String? = null,
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

@@ -27,6 +27,8 @@ import org.springframework.security.oauth2.server.authorization.settings.TokenSe
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher
+import com.sonature.auth.infrastructure.oauth2.CustomOAuth2UserService
+import com.sonature.auth.infrastructure.oauth2.OAuth2LoginSuccessHandler
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
@@ -35,7 +37,10 @@ import java.time.Duration
 import java.util.UUID
 
 @Configuration
-class AuthorizationServerConfig {
+class AuthorizationServerConfig(
+    private val customOAuth2UserService: CustomOAuth2UserService,
+    private val oAuth2LoginSuccessHandler: OAuth2LoginSuccessHandler
+) {
 
     @Bean
     @Order(1)
@@ -75,6 +80,14 @@ class AuthorizationServerConfig {
                 headers.frameOptions { it.disable() }
             }
             .formLogin(Customizer.withDefaults())
+            .oauth2Login { oauth2 ->
+                oauth2.userInfoEndpoint { userInfo ->
+                    userInfo.userService { userRequest ->
+                        customOAuth2UserService.loadUser(userRequest)
+                    }
+                }
+                oauth2.successHandler(oAuth2LoginSuccessHandler)
+            }
             .build()
     }
 

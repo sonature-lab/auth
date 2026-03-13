@@ -6,10 +6,10 @@
 
 | 항목 | 상태 |
 |------|------|
-| Phase | **Phase 2 - Sprint 2.2 완료** |
-| 현재 진행률 | Phase 2: 50% (Sprint 2.1~2.2 완료, 2.3~2.4 남음) |
+| Phase | **Phase 2 - Sprint 2.3 완료** |
+| 현재 진행률 | Phase 2: 75% (Sprint 2.1~2.3 완료, 2.4 남음) |
 | 블로커 | 없음 |
-| 전체 테스트 | 114개 통과 |
+| 전체 테스트 | 133개 통과 |
 
 ---
 
@@ -38,7 +38,7 @@
 | PKCE 지원 | **Done** | - | Public client 필수 |
 | OIDC Discovery | **Done** | - | /.well-known/openid-configuration |
 | JWK Set | **Done** | - | /oauth2/jwks |
-| Social Login | Not Started | - | Sprint 2.3 예정 |
+| Social Login | **Done** | 19 tests | Sprint 2.3 (Google, GitHub, Kakao) |
 | Consent 화면 | Not Started | - | Sprint 2.4 예정 |
 
 ---
@@ -65,7 +65,7 @@
 
 ## Test Coverage
 
-**테스트 현황**: 114개 전체 통과
+**테스트 현황**: 133개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -76,6 +76,8 @@
 | 통합 테스트 (PASETO) | 7 |
 | 통합 테스트 (Auth) | 7 |
 | 통합 테스트 (OAuth2) | 7 |
+| Social Login 단위 테스트 | 13 |
+| Social Login 통합 테스트 | 6 |
 
 ---
 
@@ -87,6 +89,5 @@
 
 ## Next Actions
 
-1. **Sprint 2.3**: Social Login (Google, GitHub, Kakao)
-2. **Sprint 2.4**: Consent 화면 + Scope 관리
-3. **Phase 3**: Multi-tenant + RBAC
+1. **Sprint 2.4**: Consent 화면 + Scope 관리
+2. **Phase 3**: Multi-tenant + RBAC

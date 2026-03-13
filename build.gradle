@@ -32,6 +32,9 @@ dependencies {
 	// OAuth2 Authorization Server
 	implementation 'org.springframework.security:spring-security-oauth2-authorization-server:1.4.5'
 
+	// OAuth2 Client (Social Login)
+	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
 	// Kotlin
 	implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 	implementation 'org.jetbrains.kotlin:kotlin-reflect'
