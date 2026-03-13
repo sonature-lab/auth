@@ -13,7 +13,9 @@ A JWT/PASETO token issuance and verification framework with OAuth2 Authorization
 - **PASETO v4 Support** (local, public)
 - **OAuth2 Authorization Server** (Authorization Code + PKCE)
 - **User Authentication** (signup, login)
+- **Social Login** (Google, GitHub, Kakao)
 - **OIDC Support** (Discovery, JWK Set)
+- **Consent UI** with customizable scopes
 - **Refresh Token Rotation**
 - **Rate Limiting**
 - **TypeScript SDK** included
@@ -80,11 +82,20 @@ open http://localhost:8080/swagger-ui/index.html
 | `/api/v1/paseto/issue` | POST | Issue PASETO v4.local token |
 | `/api/v1/paseto/verify` | POST | Verify PASETO token |
 
+### Social Login
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/oauth2/authorization/google` | GET | Start Google login |
+| `/oauth2/authorization/github` | GET | Start GitHub login |
+| `/oauth2/authorization/kakao` | GET | Start Kakao login |
+
 ### OAuth2 / OIDC
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/oauth2/authorize` | GET | Authorization Code request (PKCE) |
+| `/oauth2/consent` | GET | Consent screen (scope approval) |
 | `/oauth2/token` | POST | Token exchange |
 | `/oauth2/jwks` | GET | JWK Set (public keys) |
 | `/.well-known/openid-configuration` | GET | OIDC Discovery |
@@ -164,6 +175,12 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
 | `PASETO_PRIVATE_KEY` | Ed25519 private key | For PASETO public |
 | `API_KEYS` | Allowed API keys (comma-separated) | Yes |
 | `DATABASE_URL` | PostgreSQL JDBC URL | Prod only |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID | For Social Login |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret | For Social Login |
+| `GITHUB_CLIENT_ID` | GitHub OAuth2 Client ID | For Social Login |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth2 Client Secret | For Social Login |
+| `KAKAO_CLIENT_ID` | Kakao OAuth2 Client ID | For Social Login |
+| `KAKAO_CLIENT_SECRET` | Kakao OAuth2 Client Secret | For Social Login |
 
 ### Key Generation
 
@@ -187,6 +204,16 @@ In `dev` profile, two test clients are auto-registered:
 |-----------|------|------|---------------|
 | `sonature-dev-client` | Public (SPA/Mobile) | Required | `localhost:3000/callback`, `localhost:5173/callback` |
 | `sonature-backend-client` | Confidential (Server) | Optional | `localhost:8081/callback` |
+
+### Scopes
+
+| Scope | Description |
+|-------|-------------|
+| `openid` | OpenID Connect identity |
+| `profile` | User profile information |
+| `email` | Email address |
+| `auth:read` | Read authentication info |
+| `auth:write` | Modify authentication info |
 
 ---
 
@@ -246,7 +273,7 @@ auth/
 │   ├── domain/
 │   │   ├── token/                # Token models, exceptions
 │   │   ├── user/                 # User entity, auth exceptions
-│   │   ├── oauth2/               # OAuth2 client entity
+│   │   ├── oauth2/               # OAuth2 client entity, scope definitions
 │   │   └── refresh/              # Refresh token entity
 │   ├── application/
 │   │   ├── service/              # AuthService, JwtService, PasetoService
@@ -254,9 +281,13 @@ auth/
 │   │   └── port/output/          # TokenProvider, KeyManager interfaces
 │   ├── infrastructure/
 │   │   ├── config/               # Security, AuthorizationServer, UserDetails
-│   │   └── crypto/               # JWT/PASETO providers, key management
-│   └── api/v1/                   # REST controllers (auth, jwt, paseto)
-├── src/test/kotlin/              # 114 tests (unit + integration)
+│   │   ├── crypto/               # JWT/PASETO providers, key management
+│   │   └── oauth2/               # Social login, OAuth2 user service
+│   └── api/
+│       ├── v1/                   # REST controllers (auth, jwt, paseto)
+│       └── oauth2/               # ConsentController
+├── src/main/resources/templates/ # Thymeleaf templates (consent)
+├── src/test/kotlin/              # 149 tests (unit + integration)
 ├── docs/                         # Documentation
 └── build.gradle
 ```
@@ -284,7 +315,7 @@ auth/
 # Build
 ./gradlew build
 
-# Test (114 tests)
+# Test (149 tests)
 ./gradlew test
 
 # Coverage report
@@ -311,7 +342,7 @@ auth/
 | Phase | Description | Status |
 |-------|-------------|--------|
 | Phase 1 | JWT/PASETO Token Framework | Done |
-| Phase 2 | OAuth2 / Social Login | In Progress |
+| Phase 2 | OAuth2 / Social Login | Done |
 | Phase 3 | Multi-tenant + RBAC | Planned |
 | Phase 4 | SSO Hub | Planned |
 | Phase 5 | Advanced Security (MFA, Audit Log) | Planned |

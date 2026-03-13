@@ -13,7 +13,9 @@ JWT/PASETO 토큰 발급/검증 프레임워크 + OAuth2 Authorization Server. S
 - **PASETO v4 지원** (local, public)
 - **OAuth2 Authorization Server** (Authorization Code + PKCE)
 - **사용자 인증** (회원가입, 로그인)
+- **소셜 로그인** (Google, GitHub, Kakao)
 - **OIDC 지원** (Discovery, JWK Set)
+- **Consent UI** (커스텀 scope 관리)
 - **Refresh Token Rotation**
 - **Rate Limiting**
 - **TypeScript SDK** 기본 제공
@@ -80,11 +82,20 @@ open http://localhost:8080/swagger-ui/index.html
 | `/api/v1/paseto/issue` | POST | PASETO v4.local 토큰 발급 |
 | `/api/v1/paseto/verify` | POST | PASETO 토큰 검증 |
 
+### 소셜 로그인
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/oauth2/authorization/google` | GET | Google 로그인 시작 |
+| `/oauth2/authorization/github` | GET | GitHub 로그인 시작 |
+| `/oauth2/authorization/kakao` | GET | Kakao 로그인 시작 |
+
 ### OAuth2 / OIDC
 
 | Endpoint | Method | 설명 |
 |----------|--------|------|
 | `/oauth2/authorize` | GET | Authorization Code 요청 (PKCE) |
+| `/oauth2/consent` | GET | Consent 화면 (scope 승인) |
 | `/oauth2/token` | POST | 토큰 교환 |
 | `/oauth2/jwks` | GET | JWK Set (공개키) |
 | `/.well-known/openid-configuration` | GET | OIDC Discovery |
@@ -164,6 +175,12 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
 | `PASETO_PRIVATE_KEY` | Ed25519 개인키 | PASETO public 사용 시 |
 | `API_KEYS` | 허용된 API Key 목록 (콤마 구분) | Yes |
 | `DATABASE_URL` | PostgreSQL JDBC URL | 프로덕션만 |
+| `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID | 소셜 로그인 시 |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret | 소셜 로그인 시 |
+| `GITHUB_CLIENT_ID` | GitHub OAuth2 Client ID | 소셜 로그인 시 |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth2 Client Secret | 소셜 로그인 시 |
+| `KAKAO_CLIENT_ID` | Kakao OAuth2 Client ID | 소셜 로그인 시 |
+| `KAKAO_CLIENT_SECRET` | Kakao OAuth2 Client Secret | 소셜 로그인 시 |
 
 ### 키 생성
 
@@ -187,6 +204,16 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
 |-----------|------|------|---------------|
 | `sonature-dev-client` | Public (SPA/Mobile) | 필수 | `localhost:3000/callback`, `localhost:5173/callback` |
 | `sonature-backend-client` | Confidential (Server) | 선택 | `localhost:8081/callback` |
+
+### Scope
+
+| Scope | 설명 |
+|-------|------|
+| `openid` | OpenID Connect 신원 확인 |
+| `profile` | 사용자 프로필 정보 |
+| `email` | 이메일 주소 |
+| `auth:read` | 인증 정보 읽기 |
+| `auth:write` | 인증 정보 수정 |
 
 ---
 
@@ -246,7 +273,7 @@ auth/
 │   ├── domain/
 │   │   ├── token/                # 토큰 모델, 예외
 │   │   ├── user/                 # 사용자 엔티티, 인증 예외
-│   │   ├── oauth2/               # OAuth2 클라이언트 엔티티
+│   │   ├── oauth2/               # OAuth2 클라이언트 엔티티, scope 정의
 │   │   └── refresh/              # Refresh 토큰 엔티티
 │   ├── application/
 │   │   ├── service/              # AuthService, JwtService, PasetoService
@@ -254,9 +281,13 @@ auth/
 │   │   └── port/output/          # TokenProvider, KeyManager 인터페이스
 │   ├── infrastructure/
 │   │   ├── config/               # Security, AuthorizationServer, UserDetails
-│   │   └── crypto/               # JWT/PASETO 프로바이더, 키 관리
-│   └── api/v1/                   # REST 컨트롤러 (auth, jwt, paseto)
-├── src/test/kotlin/              # 114개 테스트 (단위 + 통합)
+│   │   ├── crypto/               # JWT/PASETO 프로바이더, 키 관리
+│   │   └── oauth2/               # 소셜 로그인, OAuth2 사용자 서비스
+│   └── api/
+│       ├── v1/                   # REST 컨트롤러 (auth, jwt, paseto)
+│       └── oauth2/               # ConsentController
+├── src/main/resources/templates/ # Thymeleaf 템플릿 (consent)
+├── src/test/kotlin/              # 149개 테스트 (단위 + 통합)
 ├── docs/                         # 문서
 └── build.gradle
 ```
@@ -284,7 +315,7 @@ auth/
 # 빌드
 ./gradlew build
 
-# 테스트 (114개)
+# 테스트 (149개)
 ./gradlew test
 
 # 커버리지 리포트
@@ -311,7 +342,7 @@ auth/
 | Phase | 설명 | 상태 |
 |-------|------|------|
 | Phase 1 | JWT/PASETO 토큰 프레임워크 | 완료 |
-| Phase 2 | OAuth2 / 소셜 로그인 | 진행 중 |
+| Phase 2 | OAuth2 / 소셜 로그인 | 완료 |
 | Phase 3 | 멀티테넌트 + RBAC | 예정 |
 | Phase 4 | SSO Hub | 예정 |
 | Phase 5 | 고급 보안 (MFA, Audit Log) | 예정 |
