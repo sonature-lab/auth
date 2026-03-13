@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AuthController (POST /api/v1/auth/signup, POST /api/v1/auth/login)
   - Auth exceptions (EmailAlreadyExists, InvalidCredentials, UserSuspended)
   - Unit tests (6) + Integration tests (7)
+- **Sprint 2.4**: Consent UI + Scope Management
+  - ConsentController (GET /oauth2/consent) with Thymeleaf template
+  - ScopeDefinition model (openid, profile, email, auth:read, auth:write)
+  - Scope descriptions in Korean/English
+  - AuthorizationServerConfig custom consent page integration
+  - spring-boot-starter-thymeleaf dependency
+  - Unit tests (12) + Integration tests (4)
 - **Sprint 2.3**: Social Login (Google, GitHub, Kakao)
   - CustomOAuth2UserService (social profile → UserEntity mapping)
   - OAuth2UserProfileMapper with provider-specific strategies
@@ -38,6 +45,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SecurityConfig now only provides PasswordEncoder bean
 - UserEntity.provider, UserEntity.providerId changed from val to var (for account linking)
 - defaultSecurityFilterChain now includes .oauth2Login() with custom user service
+- AuthorizationServerConfig now uses custom consent page (/oauth2/consent)
+- Dev OAuth2 clients now include auth:read, auth:write scopes
 
 ### Security
 - Password hashing via DelegatingPasswordEncoder (bcrypt default)

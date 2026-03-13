@@ -51,6 +51,9 @@ class AuthorizationServerConfig(
             .securityMatcher(authorizationServerConfigurer.endpointsMatcher)
             .with(authorizationServerConfigurer) { authServer ->
                 authServer.oidc(Customizer.withDefaults())
+                authServer.authorizationEndpoint { endpoint ->
+                    endpoint.consentPage("/oauth2/consent")
+                }
             }
             .exceptionHandling { exceptions ->
                 exceptions.defaultAuthenticationEntryPointFor(

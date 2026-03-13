@@ -82,10 +82,14 @@
 - [x] SecurityConfig에 .oauth2Login() 추가
 - [x] 단위 테스트 13개 + 통합 테스트 6개
 
-### Sprint 2.4 - OIDC + Consent (NEXT)
-- [ ] Consent 화면 구현 (Thymeleaf 최소 UI)
-- [ ] Scope 관리 세분화
-- [ ] 통합 테스트 + SDK 업데이트
+### Sprint 2.4 - OIDC + Consent ✅
+- [x] Thymeleaf 의존성 추가 + Consent 화면 구현 (templates/consent.html)
+- [x] ConsentController (GET /oauth2/consent — scope 표시 + 승인/거부)
+- [x] ScopeDefinition 모델 (openid, profile, email, auth:read, auth:write)
+- [x] Scope별 한글/영문 설명 매핑
+- [x] AuthorizationServerConfig consent page 연결
+- [x] DevDataInitializer에 커스텀 scope 추가
+- [x] 단위 테스트 12개 + 통합 테스트 5개 (총 149개 전체 통과)
 
 ---
 

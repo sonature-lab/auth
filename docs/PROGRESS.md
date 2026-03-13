@@ -4,6 +4,35 @@
 
 ---
 
+## 2026-03-14 - Sprint 2.4: Consent UI + Scope 관리
+
+### Completed
+- Infrastructure Layer
+  - `ConsentController` — GET /oauth2/consent 화면 렌더링
+  - `consent.html` — Thymeleaf 최소 UI (scope 표시, 승인/거부)
+  - `AuthorizationServerConfig` — consent page 연결 (.consentPage("/oauth2/consent"))
+  - `DevDataInitializer` — 테스트 클라이언트에 auth:read, auth:write scope 추가
+- Domain Layer
+  - `ScopeDefinition` — scope별 한글/영문 설명 매핑 (openid, profile, email, auth:read, auth:write)
+- Build
+  - `spring-boot-starter-thymeleaf` 의존성 추가
+- 테스트 작성
+  - `ScopeDefinitionTest` (12 tests)
+  - `ConsentControllerIntegrationTest` (4 tests)
+  - 총 149개 테스트 전체 통과
+
+### Decisions Made
+1. **Consent UI**: Thymeleaf 최소 UI (인라인 CSS, 외부 프레임워크 없음)
+2. **Scope 정의**: ScopeDefinition data class + companion object (5개 scope)
+3. **커스텀 scope**: auth:read (인증 정보 읽기), auth:write (인증 정보 수정)
+4. **Consent 처리**: Spring Authorization Server 기본 메커니즘 활용 (POST /oauth2/authorize)
+
+### Notes
+- Phase 2 전체 완료 (Sprint 2.1~2.4)
+- 다음: Phase 3 (Multi-tenant + RBAC)
+
+---
+
 ## 2026-03-14 - Sprint 2.3: Social Login (Google, GitHub, Kakao)
 
 ### Completed

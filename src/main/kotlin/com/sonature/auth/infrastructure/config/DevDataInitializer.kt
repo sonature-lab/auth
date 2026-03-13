@@ -32,7 +32,7 @@ class DevDataInitializer(
                 clientSecret = null,
                 clientName = "Sonature Dev Client (Public)",
                 redirectUris = "http://localhost:3000/callback,http://localhost:5173/callback",
-                scopes = "openid,profile,email",
+                scopes = "openid,profile,email,auth:read,auth:write",
                 grantTypes = "authorization_code,refresh_token",
                 requirePkce = true
             )
@@ -46,7 +46,7 @@ class DevDataInitializer(
                 clientSecret = passwordEncoder.encode("backend-secret"),
                 clientName = "Sonature Backend Client (Confidential)",
                 redirectUris = "http://localhost:8081/callback",
-                scopes = "openid,profile,email",
+                scopes = "openid,profile,email,auth:read,auth:write",
                 grantTypes = "authorization_code,refresh_token,client_credentials",
                 requirePkce = false
             )

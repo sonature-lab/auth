@@ -6,10 +6,10 @@
 
 | 항목 | 상태 |
 |------|------|
-| Phase | **Phase 2 - Sprint 2.3 완료** |
-| 현재 진행률 | Phase 2: 75% (Sprint 2.1~2.3 완료, 2.4 남음) |
+| Phase | **Phase 2 - Sprint 2.4 완료 (Phase 2 완료)** |
+| 현재 진행률 | Phase 2: 100% (Sprint 2.1~2.4 완료) |
 | 블로커 | 없음 |
-| 전체 테스트 | 133개 통과 |
+| 전체 테스트 | 149개 통과 |
 
 ---
 
@@ -39,7 +39,7 @@
 | OIDC Discovery | **Done** | - | /.well-known/openid-configuration |
 | JWK Set | **Done** | - | /oauth2/jwks |
 | Social Login | **Done** | 19 tests | Sprint 2.3 (Google, GitHub, Kakao) |
-| Consent 화면 | Not Started | - | Sprint 2.4 예정 |
+| Consent 화면 | **Done** | 17 tests | Sprint 2.4 (Thymeleaf + Scope 관리) |
 
 ---
 
@@ -65,7 +65,7 @@
 
 ## Test Coverage
 
-**테스트 현황**: 133개 전체 통과
+**테스트 현황**: 149개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -78,6 +78,8 @@
 | 통합 테스트 (OAuth2) | 7 |
 | Social Login 단위 테스트 | 13 |
 | Social Login 통합 테스트 | 6 |
+| Scope 단위 테스트 | 12 |
+| Consent 통합 테스트 | 4 |
 
 ---
 
@@ -89,5 +91,4 @@
 
 ## Next Actions
 
-1. **Sprint 2.4**: Consent 화면 + Scope 관리
-2. **Phase 3**: Multi-tenant + RBAC
+1. **Phase 3**: Multi-tenant + RBAC
