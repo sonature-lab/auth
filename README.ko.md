@@ -7,10 +7,13 @@
 
 [English](README.md)
 
-JWT/PASETO 기반 토큰 발급/검증 프레임워크.
+JWT/PASETO 토큰 발급/검증 프레임워크 + OAuth2 Authorization Server. Sonature 생태계의 공통 인증 기반입니다.
 
 - **JWT 발급/검증** (HS256, RS256)
 - **PASETO v4 지원** (local, public)
+- **OAuth2 Authorization Server** (Authorization Code + PKCE)
+- **사용자 인증** (회원가입, 로그인)
+- **OIDC 지원** (Discovery, JWK Set)
 - **Refresh Token Rotation**
 - **Rate Limiting**
 - **TypeScript SDK** 기본 제공
@@ -23,7 +26,7 @@ JWT/PASETO 기반 토큰 발급/검증 프레임워크.
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/sonature/auth.git
+git clone https://github.com/sonature-lab/auth.git
 cd auth
 
 # 2. Docker로 실행
@@ -59,6 +62,15 @@ open http://localhost:8080/swagger-ui/index.html
 
 ## API 개요
 
+### 인증
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/api/v1/auth/signup` | POST | 회원가입 (이메일 + 비밀번호) |
+| `/api/v1/auth/login` | POST | 로그인 후 JWT 토큰 쌍 발급 |
+
+### 토큰 API
+
 | Endpoint | Method | 설명 |
 |----------|--------|------|
 | `/api/v1/jwt/issue` | POST | JWT Access 토큰 발급 |
@@ -67,10 +79,64 @@ open http://localhost:8080/swagger-ui/index.html
 | `/api/v1/jwt/refresh` | POST | JWT 토큰 갱신 (Token Rotation) |
 | `/api/v1/paseto/issue` | POST | PASETO v4.local 토큰 발급 |
 | `/api/v1/paseto/verify` | POST | PASETO 토큰 검증 |
+
+### OAuth2 / OIDC
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
+| `/oauth2/authorize` | GET | Authorization Code 요청 (PKCE) |
+| `/oauth2/token` | POST | 토큰 교환 |
+| `/oauth2/jwks` | GET | JWK Set (공개키) |
+| `/.well-known/openid-configuration` | GET | OIDC Discovery |
+
+### 인프라
+
+| Endpoint | Method | 설명 |
+|----------|--------|------|
 | `/health` | GET | 헬스체크 |
 | `/metrics` | GET | Prometheus 메트릭 |
 
-### 예시: JWT 발급
+### 예시: 회원가입 & 로그인
+
+```bash
+# 회원가입
+curl -X POST http://localhost:8080/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "mypassword123",
+    "name": "홍길동"
+  }'
+
+# 로그인
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "mypassword123"
+  }'
+```
+
+**응답:**
+```json
+{
+  "data": {
+    "user": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "email": "user@example.com",
+      "name": "홍길동",
+      "provider": "LOCAL"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "accessExpiresIn": 900,
+    "refreshExpiresIn": 604800
+  },
+  "requestId": "req_abc123"
+}
+```
+
+### 예시: JWT 직접 발급
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/jwt/issue \
@@ -81,19 +147,6 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
     "algorithm": "HS256",
     "expiresIn": 900
   }'
-```
-
-**응답:**
-```json
-{
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "tokenType": "Bearer",
-    "expiresIn": 900
-  },
-  "requestId": "req_abc123"
-}
 ```
 
 ---
@@ -126,6 +179,17 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
 
 ---
 
+## OAuth2 클라이언트
+
+`dev` 프로파일에서 테스트 클라이언트가 자동 등록됩니다:
+
+| Client ID | 타입 | PKCE | Redirect URIs |
+|-----------|------|------|---------------|
+| `sonature-dev-client` | Public (SPA/Mobile) | 필수 | `localhost:3000/callback`, `localhost:5173/callback` |
+| `sonature-backend-client` | Confidential (Server) | 선택 | `localhost:8081/callback` |
+
+---
+
 ## TypeScript SDK
 
 ```bash
@@ -140,7 +204,20 @@ const auth = new SonatureAuth({
   apiKey: 'sk_live_your_api_key'
 });
 
-// JWT 발급
+// 회원가입
+const { user, accessToken } = await auth.signup({
+  email: 'user@example.com',
+  password: 'mypassword123',
+  name: '홍길동'
+});
+
+// 로그인
+const tokens = await auth.login({
+  email: 'user@example.com',
+  password: 'mypassword123'
+});
+
+// JWT 직접 발급
 const { accessToken, refreshToken } = await auth.jwt.issue({
   subject: 'user-123',
   expiresIn: 900
@@ -165,17 +242,23 @@ const { token } = await auth.paseto.issue({
 
 ```
 auth/
-├── src/main/kotlin/com/sonature/auth/  # 핵심 애플리케이션
-│   ├── domain/                          # 비즈니스 엔티티
-│   ├── application/                     # 유스케이스, 서비스
-│   ├── infrastructure/                  # 암호화, 영속성
-│   └── presentation/                    # REST 컨트롤러
-├── src/main/resources/                  # 설정 파일
-├── src/test/kotlin/                     # 테스트
-├── scripts/                             # 유틸리티 스크립트
-│   └── generate-keys.sh                 # 키 생성
-├── docs/                                # 문서
-└── build.gradle                         # 빌드 설정
+├── src/main/kotlin/com/sonature/auth/
+│   ├── domain/
+│   │   ├── token/                # 토큰 모델, 예외
+│   │   ├── user/                 # 사용자 엔티티, 인증 예외
+│   │   ├── oauth2/               # OAuth2 클라이언트 엔티티
+│   │   └── refresh/              # Refresh 토큰 엔티티
+│   ├── application/
+│   │   ├── service/              # AuthService, JwtService, PasetoService
+│   │   ├── usecase/              # TokenRefreshUseCase
+│   │   └── port/output/          # TokenProvider, KeyManager 인터페이스
+│   ├── infrastructure/
+│   │   ├── config/               # Security, AuthorizationServer, UserDetails
+│   │   └── crypto/               # JWT/PASETO 프로바이더, 키 관리
+│   └── api/v1/                   # REST 컨트롤러 (auth, jwt, paseto)
+├── src/test/kotlin/              # 114개 테스트 (단위 + 통합)
+├── docs/                         # 문서
+└── build.gradle
 ```
 
 ---
@@ -187,7 +270,6 @@ auth/
 | [PRD](docs/PRD.md) | 제품 요구사항 |
 | [API Reference](docs/API.md) | API 상세 스펙 |
 | [Architecture](docs/ARCHITECTURE.md) | 아키텍처 문서 |
-| [Implementation Plan](docs/IMPLEMENTATION-PLAN.md) | 구현 계획 |
 | [Status](docs/STATUS.md) | 프로젝트 상태 |
 | [Roadmap](docs/ROADMAP.md) | 로드맵 |
 | [Progress](docs/PROGRESS.md) | 진행 로그 |
@@ -202,12 +284,11 @@ auth/
 # 빌드
 ./gradlew build
 
-# 테스트
+# 테스트 (114개)
 ./gradlew test
 
 # 커버리지 리포트
 ./gradlew jacocoTestReport
-# 결과: build/reports/jacoco/test/html/index.html
 
 # 실행
 ./gradlew bootRun
@@ -215,13 +296,28 @@ auth/
 
 ### 프로파일
 
-- `dev` (기본): H2 인메모리 DB, Swagger 활성화
+- `dev` (기본): H2 인메모리 DB, Swagger 활성화, 테스트 OAuth2 클라이언트
 - `prod`: PostgreSQL, Swagger 비활성화
 
 ```bash
 # 프로덕션 프로파일
 ./gradlew bootRun --args='--spring.profiles.active=prod'
 ```
+
+---
+
+## 로드맵
+
+| Phase | 설명 | 상태 |
+|-------|------|------|
+| Phase 1 | JWT/PASETO 토큰 프레임워크 | 완료 |
+| Phase 2 | OAuth2 / 소셜 로그인 | 진행 중 |
+| Phase 3 | 멀티테넌트 + RBAC | 예정 |
+| Phase 4 | SSO Hub | 예정 |
+| Phase 5 | 고급 보안 (MFA, Audit Log) | 예정 |
+| Phase 6 | 오픈소스 + SaaS | 예정 |
+
+자세한 내용은 [ROADMAP.md](docs/ROADMAP.md)를 참고하세요.
 
 ---
 
@@ -242,3 +338,4 @@ auth/
 - [jjwt](https://github.com/jwtk/jjwt) - Java용 JWT 라이브러리
 - [paseto4j](https://github.com/nbaars/paseto4j) - Java용 PASETO v4 라이브러리
 - [Spring Boot](https://spring.io/projects/spring-boot) - 애플리케이션 프레임워크
+- [Spring Authorization Server](https://spring.io/projects/spring-authorization-server) - OAuth2 Authorization Server

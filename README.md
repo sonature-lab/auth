@@ -7,10 +7,13 @@
 
 [한국어](README.ko.md)
 
-A JWT/PASETO token issuance and verification framework.
+A JWT/PASETO token issuance and verification framework with OAuth2 Authorization Server, designed as a shared authentication foundation for the Sonature ecosystem.
 
 - **JWT Issuance & Verification** (HS256, RS256)
 - **PASETO v4 Support** (local, public)
+- **OAuth2 Authorization Server** (Authorization Code + PKCE)
+- **User Authentication** (signup, login)
+- **OIDC Support** (Discovery, JWK Set)
 - **Refresh Token Rotation**
 - **Rate Limiting**
 - **TypeScript SDK** included
@@ -23,7 +26,7 @@ A JWT/PASETO token issuance and verification framework.
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/sonature/auth.git
+git clone https://github.com/sonature-lab/auth.git
 cd auth
 
 # 2. Run with Docker
@@ -59,6 +62,15 @@ open http://localhost:8080/swagger-ui/index.html
 
 ## API Overview
 
+### Authentication
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/auth/signup` | POST | Create account (email + password) |
+| `/api/v1/auth/login` | POST | Login and receive JWT token pair |
+
+### Token API
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/v1/jwt/issue` | POST | Issue JWT access token |
@@ -67,10 +79,64 @@ open http://localhost:8080/swagger-ui/index.html
 | `/api/v1/jwt/refresh` | POST | Refresh JWT token (Token Rotation) |
 | `/api/v1/paseto/issue` | POST | Issue PASETO v4.local token |
 | `/api/v1/paseto/verify` | POST | Verify PASETO token |
+
+### OAuth2 / OIDC
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/oauth2/authorize` | GET | Authorization Code request (PKCE) |
+| `/oauth2/token` | POST | Token exchange |
+| `/oauth2/jwks` | GET | JWK Set (public keys) |
+| `/.well-known/openid-configuration` | GET | OIDC Discovery |
+
+### Infrastructure
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
 | `/health` | GET | Health check |
 | `/metrics` | GET | Prometheus metrics |
 
-### Example: Issue JWT
+### Example: Signup & Login
+
+```bash
+# Signup
+curl -X POST http://localhost:8080/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "mypassword123",
+    "name": "John Doe"
+  }'
+
+# Login
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "mypassword123"
+  }'
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "user": {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "provider": "LOCAL"
+    },
+    "accessToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiJ9...",
+    "accessExpiresIn": 900,
+    "refreshExpiresIn": 604800
+  },
+  "requestId": "req_abc123"
+}
+```
+
+### Example: Issue JWT (Direct API)
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/jwt/issue \
@@ -81,19 +147,6 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
     "algorithm": "HS256",
     "expiresIn": 900
   }'
-```
-
-**Response:**
-```json
-{
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "tokenType": "Bearer",
-    "expiresIn": 900
-  },
-  "requestId": "req_abc123"
-}
 ```
 
 ---
@@ -126,6 +179,17 @@ This script generates all required cryptographic keys:
 
 ---
 
+## OAuth2 Clients
+
+In `dev` profile, two test clients are auto-registered:
+
+| Client ID | Type | PKCE | Redirect URIs |
+|-----------|------|------|---------------|
+| `sonature-dev-client` | Public (SPA/Mobile) | Required | `localhost:3000/callback`, `localhost:5173/callback` |
+| `sonature-backend-client` | Confidential (Server) | Optional | `localhost:8081/callback` |
+
+---
+
 ## TypeScript SDK
 
 ```bash
@@ -140,7 +204,20 @@ const auth = new SonatureAuth({
   apiKey: 'sk_live_your_api_key'
 });
 
-// Issue JWT
+// Signup
+const { user, accessToken } = await auth.signup({
+  email: 'user@example.com',
+  password: 'mypassword123',
+  name: 'John Doe'
+});
+
+// Login
+const tokens = await auth.login({
+  email: 'user@example.com',
+  password: 'mypassword123'
+});
+
+// Issue JWT (direct)
 const { accessToken, refreshToken } = await auth.jwt.issue({
   subject: 'user-123',
   expiresIn: 900
@@ -165,17 +242,23 @@ const { token } = await auth.paseto.issue({
 
 ```
 auth/
-├── src/main/kotlin/com/sonature/auth/  # Core application
-│   ├── domain/                          # Business entities
-│   ├── application/                     # Use cases, services
-│   ├── infrastructure/                  # Crypto, persistence
-│   └── presentation/                    # REST controllers
-├── src/main/resources/                  # Configuration
-├── src/test/kotlin/                     # Tests
-├── scripts/                             # Utility scripts
-│   └── generate-keys.sh                 # Key generation
-├── docs/                                # Documentation
-└── build.gradle                         # Build configuration
+├── src/main/kotlin/com/sonature/auth/
+│   ├── domain/
+│   │   ├── token/                # Token models, exceptions
+│   │   ├── user/                 # User entity, auth exceptions
+│   │   ├── oauth2/               # OAuth2 client entity
+│   │   └── refresh/              # Refresh token entity
+│   ├── application/
+│   │   ├── service/              # AuthService, JwtService, PasetoService
+│   │   ├── usecase/              # TokenRefreshUseCase
+│   │   └── port/output/          # TokenProvider, KeyManager interfaces
+│   ├── infrastructure/
+│   │   ├── config/               # Security, AuthorizationServer, UserDetails
+│   │   └── crypto/               # JWT/PASETO providers, key management
+│   └── api/v1/                   # REST controllers (auth, jwt, paseto)
+├── src/test/kotlin/              # 114 tests (unit + integration)
+├── docs/                         # Documentation
+└── build.gradle
 ```
 
 ---
@@ -187,7 +270,6 @@ auth/
 | [PRD](docs/PRD.md) | Product Requirements |
 | [API Reference](docs/API.md) | API Specification |
 | [Architecture](docs/ARCHITECTURE.md) | Architecture Document |
-| [Implementation Plan](docs/IMPLEMENTATION-PLAN.md) | Implementation Plan |
 | [Status](docs/STATUS.md) | Project Status |
 | [Roadmap](docs/ROADMAP.md) | Roadmap |
 | [Progress](docs/PROGRESS.md) | Progress Log |
@@ -202,12 +284,11 @@ auth/
 # Build
 ./gradlew build
 
-# Test
+# Test (114 tests)
 ./gradlew test
 
 # Coverage report
 ./gradlew jacocoTestReport
-# Result: build/reports/jacoco/test/html/index.html
 
 # Run
 ./gradlew bootRun
@@ -215,13 +296,28 @@ auth/
 
 ### Profiles
 
-- `dev` (default): H2 in-memory DB, Swagger enabled
+- `dev` (default): H2 in-memory DB, Swagger enabled, test OAuth2 clients
 - `prod`: PostgreSQL, Swagger disabled
 
 ```bash
 # Production profile
 ./gradlew bootRun --args='--spring.profiles.active=prod'
 ```
+
+---
+
+## Roadmap
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| Phase 1 | JWT/PASETO Token Framework | Done |
+| Phase 2 | OAuth2 / Social Login | In Progress |
+| Phase 3 | Multi-tenant + RBAC | Planned |
+| Phase 4 | SSO Hub | Planned |
+| Phase 5 | Advanced Security (MFA, Audit Log) | Planned |
+| Phase 6 | Open Source + SaaS | Planned |
+
+See [ROADMAP.md](docs/ROADMAP.md) for details.
 
 ---
 
@@ -242,3 +338,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [jjwt](https://github.com/jwtk/jjwt) - JWT library for Java
 - [paseto4j](https://github.com/nbaars/paseto4j) - PASETO v4 library for Java
 - [Spring Boot](https://spring.io/projects/spring-boot) - Application framework
+- [Spring Authorization Server](https://spring.io/projects/spring-authorization-server) - OAuth2 Authorization Server
