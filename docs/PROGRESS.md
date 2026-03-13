@@ -4,6 +4,69 @@
 
 ---
 
+## 2026-03-13 - Sprint 2.2: OAuth2 Authorization Server
+
+### Completed
+- Infrastructure Layer
+  - `AuthorizationServerConfig` — OAuth2 Authorization Server 핵심 설정
+  - Authorization Code + PKCE flow
+  - OIDC 지원 (Discovery endpoint)
+  - JWK Set 자동 생성 (RSA 2048-bit)
+  - `JpaBackedRegisteredClientRepository` — JPA 기반 클라이언트 저장소
+  - `UserDetailsConfig` — Spring Security UserDetailsService (DB 연동)
+  - `DevDataInitializer` — dev/test 환경 자동 클라이언트 등록
+- Domain Layer
+  - `OAuth2ClientEntity` — OAuth2 클라이언트 등록 정보
+  - `OAuth2ClientRepository`
+- Build
+  - `spring-security-oauth2-authorization-server:1.4.5` 의존성 추가
+- 테스트 작성
+  - `OAuth2AuthorizationServerTest` (7 tests) — 통합 테스트
+  - 총 114개 테스트 전체 통과
+
+### Decisions Made
+1. **Authorization Server**: Spring Authorization Server 1.4.5 (Spring Boot 3.5.6 호환)
+2. **PKCE**: public client(SPA/Mobile)은 필수, confidential client는 선택
+3. **JWK**: 매 시작 시 RSA 2048-bit 자동 생성 (향후 영구 키 전환 예정)
+4. **Client 저장**: JPA 기반 (OAuth2ClientEntity → RegisteredClient 변환)
+5. **SecurityConfig 분리**: AuthorizationServer(@Order(1)) + Default(@Order(2))
+
+### Dev 테스트 클라이언트
+- `sonature-dev-client` — Public (PKCE required), redirect: localhost:3000,5173
+- `sonature-backend-client` — Confidential, redirect: localhost:8081
+
+---
+
+## 2026-03-13 - Sprint 2.1: User Entity + 기본 인증
+
+### Completed
+- Domain Layer
+  - `UserEntity` (email, passwordHash, name, provider, status)
+  - `AuthProvider` enum (LOCAL, GOOGLE, GITHUB, KAKAO)
+  - `UserStatus` enum (ACTIVE, SUSPENDED, DELETED)
+  - `UserRepository` (findByEmail, existsByEmail)
+  - `AuthException` sealed class (EmailAlreadyExists, InvalidCredentials, UserNotFound, UserSuspended)
+- Application Layer
+  - `AuthService` (signup, login) — JWT 발급 연동
+- API Layer
+  - `AuthController` (POST /api/v1/auth/signup, POST /api/v1/auth/login)
+  - DTOs: SignupRequest, LoginRequest, AuthResponse, UserInfo
+- Infrastructure
+  - `SecurityConfig` — PasswordEncoder Bean 추가 (DelegatingPasswordEncoder)
+  - `GlobalExceptionHandler` — Auth 예외 핸들러 4개 추가
+- 테스트 작성
+  - `AuthServiceTest` (6 tests) — 단위 테스트
+  - `AuthControllerIntegrationTest` (7 tests) — 통합 테스트
+  - 총 107개 테스트 전체 통과
+
+### Decisions Made
+1. **Password hashing**: DelegatingPasswordEncoder (bcrypt 기본, 향후 Argon2 전환 가능)
+2. **User-Token 연동**: signup/login 시 user.id를 JWT subject로 사용
+3. **Custom claims**: email, provider, name을 토큰에 포함
+4. **Validation**: email 형식, 비밀번호 8~128자 제한
+
+---
+
 ## 2026-01-29 (Day 5) - PASETO v4.local Implementation
 
 ### Completed

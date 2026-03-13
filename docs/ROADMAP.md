@@ -1,12 +1,12 @@
 # Roadmap
 
-> MVP 체크리스트 및 향후 계획
+> 프로젝트 로드맵 및 진행 상황
 
 ---
 
-## MVP (2 Weeks)
+## Phase 1: Token Framework (DONE)
 
-### Week 1: Core Token Infrastructure
+### Week 1: Core Token Infrastructure ✅
 
 #### Day 1 - Project Structure ✅
 - [x] 패키지 이동 `com.example.demo` → `com.sonature.auth`
@@ -38,76 +38,73 @@
 - [x] PasetoService + PasetoController
 - [x] Integration test
 
----
+### Week 2: Production Ready ✅
 
-### Week 2: Production Ready
-
-#### Day 6 - PASETO v4.public
-- [ ] V4PublicProvider (Ed25519)
-- [ ] KeyManager Ed25519 키 로딩
-- [ ] PasetoController mode 선택
-- [ ] OpenAPI 문서화
-
-#### Day 7 - Security & E2E
-- [ ] ApiKeyAuthenticationFilter
-- [ ] RateLimitFilter
-- [ ] 에러 코드 체계 완성
-- [ ] E2E 테스트
-
-#### Day 8-9 - TypeScript SDK
-- [ ] SDK 프로젝트 초기화 (tsup)
-- [ ] types.ts, client.ts
-- [ ] jwt.ts, paseto.ts
-- [ ] errors.ts
-- [ ] 빌드 (ESM + CJS)
-- [ ] README + 예제
-
-#### Day 10 - Docker & Monitoring
-- [ ] Dockerfile (multi-stage)
-- [ ] docker-compose.yml
-- [ ] Prometheus 메트릭
-- [ ] Grafana 대시보드
-- [ ] Health check 검증
-
-#### Day 11-12 - Deployment & Docs
-- [ ] OCI 인스턴스 설정
-- [ ] 환경변수 설정
-- [ ] 애플리케이션 배포
-- [ ] TLS 설정
-- [ ] API 문서 완성
-- [ ] README 업데이트
-- [ ] generate-keys.sh 스크립트
-- [ ] CHANGELOG, LICENSE
-
-#### Day 13-14 - Testing & Release
-- [ ] 전체 테스트 + 커버리지 80%+
-- [ ] 버그 수정
-- [ ] 성능 테스트 (p99 < 10ms)
-- [ ] 코드 리뷰 + 리팩토링
-- [ ] SDK npm 배포 준비
-- [ ] GitHub 릴리스 (v0.1.0)
-- [ ] 프로덕션 최종 검증
+- [x] API Key 인증
+- [x] Rate Limiting
+- [x] TypeScript SDK
+- [x] Docker & Monitoring (Prometheus)
+- [x] Swagger / OpenAPI
+- [x] README, LICENSE, CHANGELOG
 
 ---
 
-## Post-MVP
+## Phase 2: OAuth2 / Social Login (IN PROGRESS)
 
-### P1 - Next Version
-- [ ] JWE 지원 (암호화된 JWT)
-- [ ] HTTP/3 (QUIC)
-- [ ] Redis로 Refresh Token 저장 전환
-- [ ] API Key DB 관리
+### Sprint 2.1 - User Entity + 기본 인증 ✅
+- [x] UserEntity (email, passwordHash, provider, status)
+- [x] UserRepository + AuthService
+- [x] 회원가입/로그인 API (/api/v1/auth/signup, /login)
+- [x] Password hashing (bcrypt)
+- [x] JWT 발급을 User 기반으로 연동
+- [x] Auth 예외 처리 (EmailAlreadyExists, InvalidCredentials, UserSuspended)
+- [x] 단위 테스트 6개 + 통합 테스트 7개
 
-### P2 - Important
-- [ ] 암호 알고리즘 서버 분리
-- [ ] 키 관리 서비스 (로테이션, 버전 관리)
-- [ ] API Key별 Rate Limit
-- [ ] 사용량 통계
+### Sprint 2.2 - OAuth2 Authorization Server ✅
+- [x] Spring Authorization Server 1.4.5 의존성 추가
+- [x] OAuth2ClientEntity + JPA RegisteredClientRepository
+- [x] Authorization Code + PKCE flow
+- [x] Token Endpoint (/oauth2/token)
+- [x] Authorization Endpoint (/oauth2/authorize)
+- [x] OIDC Discovery (/.well-known/openid-configuration)
+- [x] JWK Set (/oauth2/jwks)
+- [x] UserDetailsService (DB 연동)
+- [x] Dev 환경 자동 클라이언트 등록 (public + confidential)
+- [x] 통합 테스트 7개
 
-### P3 - Nice to Have
-- [ ] 라이선스 인증 (상용 기능)
-- [ ] 토큰 family 개념
-- [ ] 멀티 테넌시
+### Sprint 2.3 - Social Login (NEXT)
+- [ ] OAuth2 Client 설정 (Google, GitHub, Kakao)
+- [ ] Social Login flow (redirect → callback → token)
+- [ ] User 자동 생성/연동 (소셜 계정 ↔ 로컬 계정)
+- [ ] Provider별 프로필 매핑
+- [ ] 테스트
+
+### Sprint 2.4 - OIDC + Consent
+- [ ] Consent 화면 구현 (Thymeleaf 최소 UI)
+- [ ] Scope 관리 세분화
+- [ ] 통합 테스트 + SDK 업데이트
+
+---
+
+## Phase 3: Multi-tenant + RBAC (PLANNED)
+- [ ] 테넌트(Organization) 관리
+- [ ] 테넌트별 격리된 RBAC (Row-level isolation)
+- [ ] Permission 기반 권한 체계
+- [ ] 테넌트별 API Key 발급/관리
+
+## Phase 4: SSO Hub (PLANNED)
+- [ ] 모든 Sonature 서비스 SSO 통합
+- [ ] Session 관리 + Cross-service 토큰 교환
+- [ ] Service Registry
+
+## Phase 5: Advanced Security (PLANNED)
+- [ ] MFA (TOTP, WebAuthn/Passkey)
+- [ ] Device fingerprinting + 이상 로그인 탐지
+- [ ] Audit Log, IP allowlist/blocklist
+
+## Phase 6: Open Source + SaaS (PLANNED)
+- [ ] 오픈소스 Core 공개
+- [ ] SaaS Pro tier
 
 ---
 
@@ -115,7 +112,7 @@
 
 | Version | Target | Status |
 |---------|--------|--------|
-| v0.1.0 | MVP Release | In Progress |
-| v0.2.0 | JWE + HTTP/3 | Planned |
-| v0.3.0 | Key Management | Planned |
-| v1.0.0 | Production Stable | Planned |
+| v0.1.0 | Phase 1 - Token Framework | Done |
+| v0.2.0 | Phase 2 - OAuth2 / Social Login | In Progress |
+| v0.3.0 | Phase 3 - Multi-tenant + RBAC | Planned |
+| v1.0.0 | Phase 4 - SSO Hub + Production Stable | Planned |

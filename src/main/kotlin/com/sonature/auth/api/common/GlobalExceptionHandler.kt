@@ -8,6 +8,11 @@ import com.sonature.auth.domain.token.exception.TokenExpiredException
 import com.sonature.auth.domain.token.exception.TokenInvalidException
 import com.sonature.auth.domain.token.exception.TokenMalformedException
 import com.sonature.auth.domain.token.exception.UnsupportedAlgorithmException
+import com.sonature.auth.domain.user.exception.AuthException
+import com.sonature.auth.domain.user.exception.EmailAlreadyExistsException
+import com.sonature.auth.domain.user.exception.InvalidCredentialsException
+import com.sonature.auth.domain.user.exception.UserNotFoundException
+import com.sonature.auth.domain.user.exception.UserSuspendedException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -76,6 +81,34 @@ class GlobalExceptionHandler {
         logger.warn("Invalid token type: ${ex.message}")
         val error = ApiError(code = ex.errorCode, message = ex.message)
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(EmailAlreadyExistsException::class)
+    fun handleEmailExists(ex: EmailAlreadyExistsException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(InvalidCredentialsException::class)
+    fun handleInvalidCredentials(ex: InvalidCredentialsException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(UserNotFoundException::class)
+    fun handleUserNotFound(ex: UserNotFoundException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(UserSuspendedException::class)
+    fun handleUserSuspended(ex: UserSuspendedException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiResponse.error(error))
     }
 

@@ -8,45 +8,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Project initialization (Spring Boot 3.5 + Kotlin 1.9)
-- Gradle dependencies (JWT, PASETO, Prometheus, JaCoCo)
-- PRD document with 17 sections
-- Implementation plan (TDD + Clean Architecture)
-- Documentation structure (STATUS, PROGRESS, ROADMAP, ARCHITECTURE)
-- PRD template for reuse
-- Key generation script
-- **Day 1**: Clean Architecture foundation
-  - Domain models (Token, TokenClaims, Algorithm, TokenType)
-  - Port interfaces (TokenProvider, KeyManager)
-  - EnvironmentKeyManager with HS256/RS256/PASETO key loading
-- **Day 2**: JWT HS256 implementation
-  - Hs256Provider with jjwt 0.12.6
-  - JwtService (issueAccessToken, verifyToken)
-  - JwtController (/api/v1/jwt/issue, /verify)
-  - GlobalExceptionHandler for token errors
-- **Day 3**: JWT RS256 implementation
-  - Rs256Provider with RSA asymmetric signing
-  - Algorithm selection via API parameter
-- **Day 4**: Refresh Token with Token Rotation
-  - RefreshTokenEntity with JPA
-  - RefreshTokenService (rotation, theft detection)
-  - TokenRefreshUseCase facade
-  - /api/v1/jwt/issue-pair, /refresh endpoints
-  - Automatic session revocation on token reuse
-- **Day 5**: PASETO v4.local implementation
-  - PasetoV4LocalProvider with paseto4j-version4
-  - PasetoService + PasetoController
-  - /api/v1/paseto/issue, /verify endpoints
+- **Sprint 2.1**: User Entity + Local Authentication
+  - UserEntity (email, passwordHash, name, provider, status)
+  - AuthProvider enum (LOCAL, GOOGLE, GITHUB, KAKAO)
+  - AuthService (signup, login with JWT issuance)
+  - AuthController (POST /api/v1/auth/signup, POST /api/v1/auth/login)
+  - Auth exceptions (EmailAlreadyExists, InvalidCredentials, UserSuspended)
+  - Unit tests (6) + Integration tests (7)
+- **Sprint 2.2**: OAuth2 Authorization Server
+  - Spring Authorization Server 1.4.5 integration
+  - Authorization Code + PKCE flow
+  - OAuth2ClientEntity with JPA-backed RegisteredClientRepository
+  - OIDC Discovery (/.well-known/openid-configuration)
+  - JWK Set endpoint (/oauth2/jwks)
+  - UserDetailsService (DB-backed)
+  - Dev auto-registration of test clients (public + confidential)
+  - Integration tests (7)
 
 ### Changed
-- Project direction from OAuth2.1 to JWT/PASETO token framework
+- SecurityConfig split into AuthorizationServerConfig (@Order 1) + defaultSecurityFilterChain (@Order 2)
+- SecurityConfig now only provides PasswordEncoder bean
 
-### Deprecated
+### Security
+- Password hashing via DelegatingPasswordEncoder (bcrypt default)
+- PKCE required for public OAuth2 clients
+- Refresh token reuse disabled in OAuth2 token settings
 
-### Removed
-- OAuth2.1 Authorization Server dependency
+---
 
-### Fixed
+## [0.1.0] - 2026-01-29
+
+### Added
+- Project initialization (Spring Boot 3.5 + Kotlin 1.9)
+- Clean Architecture foundation (domain/application/infrastructure/presentation)
+- JWT token issuance and verification (HS256, RS256) with jjwt 0.12.6
+- PASETO v4.local support with paseto4j-version4
+- Refresh Token with Token Rotation and theft detection
+- API Key authentication
+- Rate Limiting
+- TypeScript SDK
+- Docker support
+- Prometheus metrics
+- OpenAPI documentation (Swagger UI)
+- Key generation script (generate-keys.sh)
+- 94 tests passing
 
 ### Security
 - SHA-256 hashing for Refresh Token storage
