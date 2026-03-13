@@ -38,3 +38,14 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### Claude Code ###
+.claude/
+
+### TimSquad ###
+.timsquad/
+
+### Generated / Temporary ###
+repomix-output*.xml
+prompt-guide.md
+package-lock.json

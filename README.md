@@ -1,56 +1,244 @@
 # Sonature Auth
 
-OAuth2.1 / JWT-based **Authentication and Authorization service**.  
-This project provides a centralized identity and access management solution for the Sonature microservices architecture.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![JDK 21](https://img.shields.io/badge/JDK-21-blue.svg)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple.svg)](https://kotlinlang.org/)
+
+[한국어](README.ko.md)
+
+A JWT/PASETO token issuance and verification framework.
+
+- **JWT Issuance & Verification** (HS256, RS256)
+- **PASETO v4 Support** (local, public)
+- **Refresh Token Rotation**
+- **Rate Limiting**
+- **TypeScript SDK** included
 
 ---
 
-## ✨ Features
-- **OAuth2.1 Authorization Server**
-- **JWT Access / Refresh Token issuance**
-- **User Registration / Login API**
-- **Role-Based Access Control (RBAC)**
-- Built with **Spring Boot 3 + Kotlin + Gradle**
+## Quick Start
 
----
+### Docker (Recommended)
 
-## 📂 Project Structure
-auth/
-├─ src/main/kotlin/com/sonature/auth # Core application code
-├─ src/main/resources # Application configs
-├─ build.gradle # Gradle build file
-└─ settings.gradle # Project settingss
-
----
-
-## 🚀 Getting Started
-
-### 1. Requirements
-- JDK 17+
-- Gradle 8+
-- (Optional) Docker
-
-### 2. Run locally
 ```bash
+# 1. Clone the repository
+git clone https://github.com/sonature/auth.git
+cd auth
+
+# 2. Run with Docker
+docker-compose up -d
+
+# 3. Health check
+curl http://localhost:8080/health
+```
+
+### Local Development
+
+```bash
+# 1. Prerequisites
+# - JDK 21+
+# - Gradle 8+
+
+# 2. Generate keys
+chmod +x scripts/generate-keys.sh
+./scripts/generate-keys.sh
+
+# 3. Set environment variables
+export JWT_HS256_SECRET=$(openssl rand -base64 32)
+export API_KEYS=sk_test_development
+
+# 4. Run
 ./gradlew bootRun
 
-📌 API Documentation
-Swagger UI is available at:
-http://localhost:8080/swagger-ui/index.html
-OpenAPI specification (openapi.json) can be exported for external documentation tools if needed.
-
-📌 API Overview
-Endpoint	Method	Description
-/api/auth/signup	POST	User registration
-/api/auth/login	POST	Login & issue JWT tokens
-/api/auth/refresh	POST	Issue new access token with refresh
-/api/auth/logout	POST	User logout
-
-🔒 Security
-Password hashing with BCrypt
-JWT signing with RSA private/public key pair
-HTTPS strongly recommended in production
-📜 License
-This project is licensed under the MIT License.
+# 5. Swagger UI
+open http://localhost:8080/swagger-ui/index.html
+```
 
 ---
+
+## API Overview
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/jwt/issue` | POST | Issue JWT access token |
+| `/api/v1/jwt/issue-pair` | POST | Issue JWT access + refresh token pair |
+| `/api/v1/jwt/verify` | POST | Verify JWT token |
+| `/api/v1/jwt/refresh` | POST | Refresh JWT token (Token Rotation) |
+| `/api/v1/paseto/issue` | POST | Issue PASETO v4.local token |
+| `/api/v1/paseto/verify` | POST | Verify PASETO token |
+| `/health` | GET | Health check |
+| `/metrics` | GET | Prometheus metrics |
+
+### Example: Issue JWT
+
+```bash
+curl -X POST http://localhost:8080/api/v1/jwt/issue \
+  -H "X-API-Key: sk_test_development" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "subject": "user-123",
+    "algorithm": "HS256",
+    "expiresIn": 900
+  }'
+```
+
+**Response:**
+```json
+{
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 900
+  },
+  "requestId": "req_abc123"
+}
+```
+
+---
+
+## Configuration
+
+### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `JWT_HS256_SECRET` | HS256 secret key (32+ bytes) | Yes |
+| `JWT_RS256_PRIVATE_KEY` | RS256 private key (PEM) | For RS256 |
+| `JWT_RS256_PUBLIC_KEY` | RS256 public key (PEM) | For RS256 |
+| `PASETO_SECRET_KEY` | PASETO v4.local key | For PASETO |
+| `PASETO_PRIVATE_KEY` | Ed25519 private key | For PASETO public |
+| `API_KEYS` | Allowed API keys (comma-separated) | Yes |
+| `DATABASE_URL` | PostgreSQL JDBC URL | Prod only |
+
+### Key Generation
+
+```bash
+./scripts/generate-keys.sh
+```
+
+This script generates all required cryptographic keys:
+- HS256 Secret (HMAC-SHA256)
+- RS256 Key Pair (RSA 2048)
+- Ed25519 Key Pair (PASETO v4.public)
+- PASETO v4.local Secret
+
+---
+
+## TypeScript SDK
+
+```bash
+npm install @sonature/auth-sdk
+```
+
+```typescript
+import { SonatureAuth } from '@sonature/auth-sdk';
+
+const auth = new SonatureAuth({
+  baseUrl: 'https://auth.sonature.io',
+  apiKey: 'sk_live_your_api_key'
+});
+
+// Issue JWT
+const { accessToken, refreshToken } = await auth.jwt.issue({
+  subject: 'user-123',
+  expiresIn: 900
+});
+
+// Verify JWT
+const { valid, claims } = await auth.jwt.verify(accessToken);
+
+// Refresh JWT
+const newTokens = await auth.jwt.refresh(refreshToken);
+
+// Issue PASETO
+const { token } = await auth.paseto.issue({
+  subject: 'user-123',
+  mode: 'local'
+});
+```
+
+---
+
+## Project Structure
+
+```
+auth/
+├── src/main/kotlin/com/sonature/auth/  # Core application
+│   ├── domain/                          # Business entities
+│   ├── application/                     # Use cases, services
+│   ├── infrastructure/                  # Crypto, persistence
+│   └── presentation/                    # REST controllers
+├── src/main/resources/                  # Configuration
+├── src/test/kotlin/                     # Tests
+├── scripts/                             # Utility scripts
+│   └── generate-keys.sh                 # Key generation
+├── docs/                                # Documentation
+└── build.gradle                         # Build configuration
+```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [PRD](docs/PRD.md) | Product Requirements |
+| [API Reference](docs/API.md) | API Specification |
+| [Architecture](docs/ARCHITECTURE.md) | Architecture Document |
+| [Implementation Plan](docs/IMPLEMENTATION-PLAN.md) | Implementation Plan |
+| [Status](docs/STATUS.md) | Project Status |
+| [Roadmap](docs/ROADMAP.md) | Roadmap |
+| [Progress](docs/PROGRESS.md) | Progress Log |
+
+---
+
+## Development
+
+### Build & Test
+
+```bash
+# Build
+./gradlew build
+
+# Test
+./gradlew test
+
+# Coverage report
+./gradlew jacocoTestReport
+# Result: build/reports/jacoco/test/html/index.html
+
+# Run
+./gradlew bootRun
+```
+
+### Profiles
+
+- `dev` (default): H2 in-memory DB, Swagger enabled
+- `prod`: PostgreSQL, Swagger disabled
+
+```bash
+# Production profile
+./gradlew bootRun --args='--spring.profiles.active=prod'
+```
+
+---
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## Acknowledgments
+
+- [jjwt](https://github.com/jwtk/jjwt) - JWT library for Java
+- [paseto4j](https://github.com/nbaars/paseto4j) - PASETO v4 library for Java
+- [Spring Boot](https://spring.io/projects/spring-boot) - Application framework

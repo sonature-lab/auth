@@ -1,0 +1,179 @@
+package com.sonature.auth.infrastructure.crypto.jwt
+
+import com.sonature.auth.application.port.output.KeyManager
+import com.sonature.auth.domain.token.exception.TokenExpiredException
+import com.sonature.auth.domain.token.exception.TokenInvalidException
+import com.sonature.auth.domain.token.exception.TokenMalformedException
+import com.sonature.auth.domain.token.model.Algorithm
+import com.sonature.auth.domain.token.model.TokenClaims
+import com.sonature.auth.domain.token.model.TokenConfig
+import com.sonature.auth.domain.token.model.TokenType
+import io.mockk.every
+import io.mockk.mockk
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import java.security.KeyFactory
+import java.security.PrivateKey
+import java.security.PublicKey
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
+import java.time.Instant
+import java.util.Base64
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+class Rs256ProviderTest {
+
+    private lateinit var keyManager: KeyManager
+    private lateinit var provider: Rs256Provider
+    private lateinit var privateKey: PrivateKey
+    private lateinit var publicKey: PublicKey
+
+    @BeforeEach
+    fun setUp() {
+        val (privKey, pubKey) = generateRsaKeyPair()
+        privateKey = privKey
+        publicKey = pubKey
+
+        keyManager = mockk()
+        every { keyManager.getSigningKey(Algorithm.RS256) } returns privateKey
+        every { keyManager.getVerificationKey(Algorithm.RS256) } returns publicKey
+
+        provider = Rs256Provider(keyManager)
+    }
+
+    @Test
+    fun `supportedAlgorithm should return RS256`() {
+        assertEquals(Algorithm.RS256, provider.supportedAlgorithm())
+    }
+
+    @Test
+    fun `should issue valid JWT token with RS256`() {
+        val claims = createTestClaims()
+        val config = createTestConfig()
+
+        val token = provider.issue(claims, config)
+
+        assertNotNull(token)
+        assertTrue(token.isNotBlank())
+        assertEquals(3, token.split(".").size)
+    }
+
+    @Test
+    fun `should verify valid JWT token`() {
+        val originalClaims = createTestClaims()
+        val config = createTestConfig()
+
+        val token = provider.issue(originalClaims, config)
+        val verifiedClaims = provider.verify(token)
+
+        assertEquals(originalClaims.issuer, verifiedClaims.issuer)
+        assertEquals(originalClaims.subject, verifiedClaims.subject)
+        assertEquals(originalClaims.tokenId, verifiedClaims.tokenId)
+        assertEquals(originalClaims.tokenType, verifiedClaims.tokenType)
+    }
+
+    @Test
+    fun `should throw TokenExpiredException for expired token`() {
+        val expiredClaims = createTestClaims(
+            issuedAt = Instant.now().minusSeconds(3600),
+            expiresAt = Instant.now().minusSeconds(1800)
+        )
+        val config = createTestConfig()
+
+        val token = provider.issue(expiredClaims, config)
+
+        assertThrows<TokenExpiredException> {
+            provider.verify(token)
+        }
+    }
+
+    @Test
+    fun `should throw TokenInvalidException for tampered token`() {
+        val claims = createTestClaims()
+        val config = createTestConfig()
+
+        val token = provider.issue(claims, config)
+        val tamperedToken = token.dropLast(5) + "xxxxx"
+
+        assertThrows<TokenInvalidException> {
+            provider.verify(tamperedToken)
+        }
+    }
+
+    @Test
+    fun `should throw TokenMalformedException for malformed token`() {
+        assertThrows<TokenMalformedException> {
+            provider.verify("not-a-valid-jwt")
+        }
+    }
+
+    @Test
+    fun `should preserve custom claims`() {
+        val customClaims = mapOf("role" to "admin", "orgId" to "org-123")
+        val claims = createTestClaims(customClaims = customClaims)
+        val config = createTestConfig()
+
+        val token = provider.issue(claims, config)
+        val verifiedClaims = provider.verify(token)
+
+        assertEquals("admin", verifiedClaims.customClaims["role"])
+        assertEquals("org-123", verifiedClaims.customClaims["orgId"])
+    }
+
+    @Test
+    fun `should include audience in token when provided`() {
+        val claims = createTestClaims(audience = "my-client-app")
+        val config = createTestConfig()
+
+        val token = provider.issue(claims, config)
+        val verifiedClaims = provider.verify(token)
+
+        assertEquals("my-client-app", verifiedClaims.audience)
+    }
+
+    @Test
+    fun `should fail verification with wrong public key`() {
+        val claims = createTestClaims()
+        val config = createTestConfig()
+
+        val token = provider.issue(claims, config)
+
+        val (_, wrongPublicKey) = generateRsaKeyPair()
+        every { keyManager.getVerificationKey(Algorithm.RS256) } returns wrongPublicKey
+
+        assertThrows<TokenInvalidException> {
+            provider.verify(token)
+        }
+    }
+
+    private fun createTestClaims(
+        issuedAt: Instant = Instant.now(),
+        expiresAt: Instant = Instant.now().plusSeconds(900),
+        audience: String? = null,
+        customClaims: Map<String, Any> = emptyMap()
+    ) = TokenClaims(
+        issuer = "sonature-auth",
+        subject = "user-123",
+        audience = audience,
+        expiresAt = expiresAt,
+        issuedAt = issuedAt,
+        tokenId = "jti-${System.currentTimeMillis()}",
+        tokenType = TokenType.ACCESS,
+        customClaims = customClaims
+    )
+
+    private fun createTestConfig() = TokenConfig(
+        algorithm = Algorithm.RS256,
+        issuer = "sonature-auth"
+    )
+
+    private fun generateRsaKeyPair(): Pair<PrivateKey, PublicKey> {
+        val keyPairGenerator = java.security.KeyPairGenerator.getInstance("RSA")
+        keyPairGenerator.initialize(2048)
+        val keyPair = keyPairGenerator.generateKeyPair()
+        return Pair(keyPair.private, keyPair.public)
+    }
+}

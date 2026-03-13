@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: sonature-auth-test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+
+server:
+  port: 0
+
+# Crypto Keys for Testing
+crypto:
+  keys:
+    hs256-secret: dGVzdC1zZWNyZXQta2V5LWZvci1kZXZlbG9wbWVudC0zMmJ5dGVz
+    # PASETO v4.local test key (32 bytes, Base64 encoded)
+    paseto-secret-key: EYXdn5oBCMrkWc9q1zBzeToCzKEDXZNIodweigGmpTc=
+    rs256-private-key: |
+      -----BEGIN PRIVATE KEY-----
+      MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCfX/w5QhhmxYAB
+      CyBK6zLYNiinRaK+K99jW8a20Vjp6QxQDr67SBR5XeastecKiw3zZVYPhEewsx8A
+      khYQMWuBtuqu5W2FWobmIeekmnYHO+uyXfJmZWq4x+u09SY3cQV8Mk2HUD64TSEy
+      b2ENG+9x4oU5uObZpDRgOeQMZL1WrlH3iXWQnQ6OUCFe7K6VIUJEvzIEIEliiZ47
+      6c8iS22wUcxYguQsSAmhXS9Dh3oqbgJSC3q3kQoTtRKzJ3qOfnoyQKLVQ6PDQ45j
+      /YS4/qd91USaszT1a0rjTLWoBCmKhV0MlPkxg+y90Mz3L+tpmGkPlK2z3uMlnVnA
+      RsWcGEknAgMBAAECggEAU7uaSHrxVw1ssx+lV7c6f130/e0YE9H5C7qsLGDQ1hQa
+      4/TbQIoeN6WeDB+Fw4RLUBVtobld8Pgq0aHu9ZMBaKUxp7HiWK23MjGeAl0kpahV
+      rOCu+h1OdMaUj/48leRLfXTwRqdiTHI5fsYFt11179+TH0CGCNK8sdG4fspur5sS
+      Kanz7EJzIpNgpl1vGJVqG6h+iU9vUyluxbAUbPZudfsF9Bbur8EG7M3hlxzWD3yI
+      qR/9Zi0poqWgLbSGOTbfp9c5T85NMFgQzafasrM5sp6OewIkTxy0vm9a+TSIY/iB
+      ogQ7kaqJZRKMUQVsPqrAsRPIZx5LBhdCCnXljMfAAQKBgQDOXjnJ2R2pE00cbSm7
+      iAM/pvO1uege6dxW17GFe4ntRUrF7Vu0u3Y/95K95j4YIssZuyJ0jgpOVxEojqH0
+      sedW7cSMteWRB6Gh9Dbor/kggDJPVZ9ojIHe2UjchF+L6Ado5laccI0lHHHLsZ1v
+      1cEuDZ3/SwZ5HdunQLgJfCI8ZwKBgQDFtHZ4KUtL/GQQ4wZbzzmWtmZp1ny9uTTg
+      vH7+QNidHShdJXdX1ksyAap0a5LNPUSDbqND+aBPmr4QiqwnyCanzCp4zmsuV24M
+      g1b2uPpAwu2n/oercuWWL9BE2j+6ALNxkrDRpY7YpPhVOvjO0YdLdHzqZyFR98yU
+      vudb/GmVQQKBgQDGV3GbOn1zXwWh6JlPkC3vI3rgkkkyTPpkzPHlpRKvZQW0raiS
+      UAoa+MukkIHlmKszk9RNyabGHJB1NoEaOVJrDiL2SmzVs0v56EpN4bPDNPMlpNmN
+      Fl5L3PJWXzOlt+BHRfrAaLx/ipMkfxUdw4fjx1qvX2BdUAEpAt7e3tvYyQKBgHAK
+      OSkXnchOHBdF0RCueyBh9d/84WxTTRgfOoi0Dw3avEktNljc5HhOYV7gp60QD4e8
+      Z2HaUXNLanLNY4qX7vAgz+DueeclPQRyWhIv+gJBdZVCtXgAAQP/zLN4S60JQKgY
+      TYRBopY7x0/lv6LVMysbtL7R+xwMpi+VkF+cx+kBAoGANzprmr5ITz5i8ls/d7h6
+      AZvZa9UcXYKqpMqsIS31XO7XL0WKu6bnlurJ4y1F7YRmTB1/cQ7WisPxEM/qzB/w
+      kNDhBWJmydbFzwt1Br53SJe9JeOws6Rxhjc2Zo3Tu5/lmA7GHp7c6WLnZh8MPel6
+      kyWMHbrsKjLZ/+lJzXJvzb4=
+      -----END PRIVATE KEY-----
+    rs256-public-key: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn1/8OUIYZsWAAQsgSusy
+      2DYop0WivivfY1vGttFY6ekMUA6+u0gUeV3mrLXnCosN82VWD4RHsLMfAJIWEDFr
+      gbbqruVthVqG5iHnpJp2Bzvrsl3yZmVquMfrtPUmN3EFfDJNh1A+uE0hMm9hDRvv
+      ceKFObjm2aQ0YDnkDGS9Vq5R94l1kJ0OjlAhXuyulSFCRL8yBCBJYomeO+nPIktt
+      sFHMWILkLEgJoV0vQ4d6Km4CUgt6t5EKE7USsyd6jn56MkCi1UOjw0OOY/2EuP6n
+      fdVEmrM09WtK40y1qAQpioVdDJT5MYPsvdDM9y/raZhpD5Sts97jJZ1ZwEbFnBhJ
+      JwIDAQAB
+      -----END PUBLIC KEY-----
+
+logging:
+  level:
+    root: WARN
+    com.sonature.auth: INFO

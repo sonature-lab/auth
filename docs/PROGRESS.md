@@ -1,0 +1,272 @@
+# Progress Log
+
+> 일일 진행 기록. 새 항목은 상단에 추가.
+
+---
+
+## 2026-01-29 (Day 5) - PASETO v4.local Implementation
+
+### Completed
+- Infrastructure Layer
+  - `PasetoV4LocalProvider` 구현 (paseto4j-version4:2024.3)
+  - XChaCha20-Poly1305 기반 대칭키 암호화
+  - TokenProvider 인터페이스 구현
+- Application Layer
+  - `PasetoService` 구현 (issueToken, verifyToken)
+  - JwtService와 동일한 패턴 적용
+- API Layer
+  - `PasetoController` (/api/v1/paseto/issue, /api/v1/paseto/verify)
+  - Request/Response DTOs (PasetoIssueRequest, PasetoVerifyRequest 등)
+- 테스트 작성
+  - `PasetoV4LocalProviderTest` (9 tests) - 단위 테스트
+  - `PasetoControllerIntegrationTest` (7 tests) - 통합 테스트
+  - 총 94개 테스트 전체 통과 (Day 4: 78 + Day 5: 16)
+
+### Decisions Made
+1. **라이브러리 선택**: jpaseto 0.7.0은 v4 미지원, paseto4j-version4:2024.3 사용
+2. **토큰 형식**: `v4.local.` 접두사로 PASETO 토큰 식별
+3. **키 설정**: 32바이트 Base64 인코딩 시크릿 키 (XChaCha20)
+
+### Notes
+- 테스트: 94개 전체 통과
+- PASETO는 JWT와 달리 암호화된 페이로드 사용 (더 안전)
+- Week 1 Core Token Infrastructure 완료!
+
+### Tomorrow (Day 6)
+- [ ] PASETO v4.public 구현 (Ed25519)
+- [ ] KeyManager Ed25519 키 로딩
+- [ ] PasetoController mode 선택
+
+---
+
+## 2026-01-29 (Day 4) - Refresh Token Implementation
+
+### Completed
+- Domain Layer
+  - `RefreshTokenEntity` JPA Entity (인덱스 포함)
+  - `RefreshTokenRepository` Spring Data JPA Repository
+  - `TokenPair` Value Object (Access + Refresh)
+  - 3개 예외 추가 (RefreshTokenRevokedException, RefreshTokenReusedException, InvalidTokenTypeException)
+- Application Layer
+  - `RefreshTokenService` 구현 (storeRefreshToken, validateAndConsume, rotateToken, revokeAllTokensForSubject)
+  - `TokenRefreshUseCase` 구현 (issueTokenPair, refreshTokens)
+  - JwtService 확장 (issueTokenPair, issueRefreshToken, verifyTokenWithType)
+- API Layer
+  - `JwtController` 확장 (/issue-pair, /refresh)
+  - Request/Response DTOs (JwtRefreshRequest, JwtRefreshResponse, JwtTokenPairResponse)
+  - `GlobalExceptionHandler` 확장 (3개 핸들러 추가)
+- 테스트 작성
+  - `JwtRefreshIntegrationTest` (8 tests) - 통합 테스트
+  - 총 78개 테스트 전체 통과 (Day 3: 70 + Day 4: 8)
+
+### Decisions Made
+1. **Token Rotation**: Refresh 시 새 토큰 발급, 기존 토큰 즉시 폐기
+2. **탈취 감지**: 이미 사용된 토큰 재사용 시 해당 subject의 모든 토큰 무효화
+3. **DB 저장**: SHA-256 해시로 토큰 저장 (원본 토큰 노출 방지)
+4. **트랜잭션**: `REQUIRES_NEW` 전파로 탈취 감지 시 독립 커밋 보장
+5. **Self-Injection**: `ObjectProvider`로 같은 클래스 내 프록시 호출 해결
+
+### Notes
+- 테스트: 78개 전체 통과
+- 복잡한 트랜잭션 경계 문제 해결 (예외 발생 시에도 revoke 커밋 유지)
+
+### Tomorrow (Day 5)
+- [x] PASETO v4.local 구현
+- [x] V4LocalProvider 구현
+- [x] PasetoService + PasetoController
+
+---
+
+## 2026-01-29 (Day 3) - JWT RS256 Implementation
+
+### Completed
+- Crypto Layer
+  - `Rs256Provider` 구현 (RSA 비대칭키 서명)
+  - RSA PrivateKey로 서명, PublicKey로 검증
+  - HS256과 동일한 예외 매핑 패턴 적용
+- Infrastructure
+  - 테스트용 RSA 2048-bit 키 쌍 생성 (`src/test/resources/keys/`)
+  - `application-test.yml` 생성 (RS256 키 설정 포함)
+- API Integration
+  - algorithm 파라미터로 HS256/RS256 자동 선택
+  - JwtService가 Spring DI로 모든 TokenProvider 자동 통합
+- 테스트 작성
+  - `Rs256ProviderTest` (9 tests) - 단위 테스트
+  - `JwtControllerIntegrationTest` RS256 테스트 추가 (4 tests)
+  - 총 70개 테스트 전체 통과 (Day 2: 57 + Day 3: 13)
+
+### Decisions Made
+1. **키 로딩**: PEM 형식 RSA 키를 YAML multiline string으로 직접 설정
+2. **테스트 키**: 테스트 전용 RSA 키 별도 생성 (프로덕션 키와 분리)
+3. **알고리즘 선택**: API 요청의 algorithm 파라미터로 동적 선택
+
+### Notes
+- 테스트: 70개 전체 통과
+- RS256은 HS256보다 서명/검증 속도가 느리지만 키 분리 보안에 유리
+
+### Tomorrow (Day 4)
+- [ ] Refresh Token 구현
+- [ ] Token Refresh Flow
+- [ ] Refresh Token 저장소 (In-Memory 또는 H2)
+
+---
+
+## 2026-01-29 (Day 2) - JWT HS256 Implementation
+
+### Completed
+- Crypto Layer
+  - `Hs256Provider` 구현 (jjwt 0.12.6)
+  - JWT 토큰 발급/검증 기능
+  - 예외 매핑 (ExpiredJwtException → TokenExpiredException 등)
+- Application Layer
+  - `JwtService` 구현 (issueAccessToken, verifyToken)
+  - TimeProvider, IdGenerator 통합
+- API Layer
+  - `JwtController` (/api/v1/jwt/issue, /api/v1/jwt/verify)
+  - Request/Response DTOs (JwtIssueRequest, JwtVerifyRequest 등)
+  - `ApiResponse`, `ApiError` 공통 응답 모델
+  - `GlobalExceptionHandler` 전역 예외 처리
+- Infrastructure
+  - `SecurityConfig` (API 엔드포인트 permitAll)
+  - MockK 라이브러리 추가 (build.gradle)
+- 테스트 작성
+  - `Hs256ProviderTest` (9 tests)
+  - `JwtServiceTest` (6 tests)
+  - `JwtControllerIntegrationTest` (7 tests)
+  - 총 57개 테스트 전체 통과 (Day 1: 35 + Day 2: 22)
+
+### Decisions Made
+1. **jjwt 0.12.x API**: `Jwts.parser().verifyWith()` 패턴 사용
+2. **API 응답**: `ApiResponse<T>` 래퍼로 일관된 응답 형식
+3. **예외 처리**: `GlobalExceptionHandler`에서 중앙 집중 처리
+4. **보안**: Day 2는 API Key 인증 없이 기능 구현에 집중
+
+### Notes
+- 테스트: 57개 전체 통과
+- API 응답 시간: 토큰 발급 < 10ms
+
+### Tomorrow (Day 3)
+- [ ] Rs256Provider 구현 (RSA 비대칭키)
+- [ ] KeyManager RS256 키 로딩 검증
+- [ ] algorithm 파라미터로 HS256/RS256 선택
+- [ ] RS256 단위 테스트
+
+---
+
+## 2026-01-29 (Day 1) - Foundation & Clean Architecture
+
+### Completed
+- 패키지 구조 마이그레이션
+  - `com.example.demo` → `com.sonature.auth`
+  - Clean Architecture 폴더 구조 적용
+- Domain Layer 구현
+  - `Algorithm` enum (HS256, RS256, PASETO_V4_LOCAL, PASETO_V4_PUBLIC)
+  - `TokenType` enum (ACCESS, REFRESH)
+  - `TokenClaims` Value Object (iss, sub, aud, exp, iat, jti)
+  - `Token` Value Object
+  - `TokenConfig` 설정 클래스
+  - `TokenException` sealed class 계층 (Expired, Invalid, Malformed, UnsupportedAlgorithm)
+- Application Layer - Port 인터페이스
+  - `TokenProvider` 인터페이스 (issue, verify, supportedAlgorithm)
+  - `KeyManager` 인터페이스 (getSigningKey, getVerificationKey, hasKey)
+- Infrastructure Layer
+  - `KeyConfig` ConfigurationProperties
+  - `EnvironmentKeyManager` 구현 (HS256, RS256, PASETO 키 로딩)
+- Common Utilities
+  - `TimeProvider` 인터페이스 + `SystemTimeProvider`
+  - `IdGenerator` 인터페이스 + `UuidGenerator`
+- 테스트 작성
+  - `AlgorithmTest` (6 tests)
+  - `TokenClaimsTest` (12 tests)
+  - `TokenConfigTest` (8 tests)
+  - `EnvironmentKeyManagerTest` (9 tests)
+  - 총 35개 테스트 전체 통과
+
+### Decisions Made
+1. **Domain 모델**: Kotlin data class 기반 Value Object 패턴
+2. **예외 처리**: sealed class로 타입 안전한 예외 계층 구현
+3. **키 관리**: 환경변수 기반 (Base64 인코딩)
+4. **테스트 전략**: 각 Domain 모델별 상세 단위 테스트
+
+### Notes
+- 빌드 시간: 13초 (clean build)
+- 테스트 실행 시간: 0.3초
+- 애플리케이션 시작 시간: 1.3초
+
+### Tomorrow (Day 2)
+- [ ] JWT HS256 Provider 구현 (Hs256Provider)
+- [ ] JwtService 구현 (issue, verify)
+- [ ] Provider 단위 테스트 작성
+- [ ] Service 통합 테스트 작성
+
+---
+
+## 2026-01-28 (Day 0) - Project Setup
+
+### Completed
+- Gradle 의존성 설정
+  - JWT: jjwt 0.12.6
+  - PASETO: jpaseto 0.7.0
+  - Monitoring: micrometer-prometheus
+  - Testing: JaCoCo
+- JDK 21 설정 (ARM64)
+- PRD 작성 완료 (docs/PRD.md)
+  - 17개 섹션
+  - JWT/PASETO 스펙
+  - API 설계
+  - 에러 코드 체계
+  - Rate Limiting 정책
+  - Refresh Token 저장 전략
+  - API Key 관리
+  - 키 생성 스크립트
+- 구현 플랜 작성
+  - TDD + Clean Architecture 전략
+  - 2주 상세 일정
+  - Clean Architecture 폴더 구조
+- 문서 정책 수립
+  - PRD 템플릿 생성 (.claude/templates/)
+  - 상태 추적 문서 (STATUS.md, PROGRESS.md, ROADMAP.md)
+
+### Decisions Made
+1. **개발 전략**: TDD + Clean Architecture 하이브리드
+   - 보안 크리티컬한 토큰 처리에 TDD 필수
+   - 향후 암호 서버 분리 대비 인터페이스 설계
+2. **Refresh Token 저장**: PostgreSQL (MVP), Redis (향후)
+3. **API Key 관리**: 환경변수 (MVP), DB (향후)
+
+### Notes
+- OAuth2.1 스코프에서 토큰 프레임워크로 방향 전환
+- 원래 스코프는 docs/archive/original-scope.md에 보관
+
+### Tomorrow (Day 1)
+- [ ] 패키지 구조 변경
+- [ ] Domain 모델 정의
+- [ ] Port 인터페이스 정의
+- [ ] KeyManager 구현 시작
+
+---
+
+<!--
+## Template
+
+## YYYY-MM-DD (Day N) - Theme
+
+### Completed
+- Task 1
+- Task 2
+
+### In Progress
+- Task 3
+
+### Blocked
+- Task 4 (reason)
+
+### Decisions Made
+1. Decision 1
+
+### Notes
+- Note 1
+
+### Tomorrow
+- [ ] Task 5
+-->

@@ -4,15 +4,16 @@ plugins {
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
 	id 'org.jetbrains.kotlin.plugin.jpa' version '1.9.25'
+	id 'jacoco'
 }
 
-group = 'com.example'
+group = 'com.sonature'
 version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
+description = 'JWT/PASETO Token Framework'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(21)
 	}
 }
 
@@ -21,15 +22,46 @@ repositories {
 }
 
 dependencies {
+	// Spring Boot Starters
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// Kotlin
 	implementation 'com.fasterxml.jackson.module:jackson-module-kotlin'
 	implementation 'org.jetbrains.kotlin:kotlin-reflect'
+
+	// JWT (jjwt)
+	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+	// PASETO
+	implementation 'dev.paseto:jpaseto-api:0.7.0'
+	runtimeOnly 'dev.paseto:jpaseto-impl:0.7.0'
+	runtimeOnly 'dev.paseto:jpaseto-jackson:0.7.0'
+	runtimeOnly 'dev.paseto:jpaseto-bouncy-castle:0.7.0'
+
+	// PASETO v4 (paseto4j)
+	implementation 'io.github.nbaars:paseto4j-version4:2024.3'
+
+	// Swagger / OpenAPI
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+	// Monitoring (Prometheus)
+	implementation 'io.micrometer:micrometer-registry-prometheus'
+
+	// Database
 	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'com.h2database:h2'
+
+	// Test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
 	testImplementation 'org.springframework.security:spring-security-test'
+	testImplementation 'io.mockk:mockk:1.13.13'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -47,4 +79,17 @@ allOpen {
 
 tasks.named('test') {
 	useJUnitPlatform()
+	finalizedBy jacocoTestReport
+}
+
+jacoco {
+	toolVersion = '0.8.11'
+}
+
+jacocoTestReport {
+	dependsOn test
+	reports {
+		xml.required = true
+		html.required = true
+	}
 }
