@@ -4,6 +4,7 @@ import com.sonature.auth.application.service.JwtService
 import com.sonature.auth.domain.tenant.context.TenantContext
 import com.sonature.auth.domain.tenant.context.TenantContextHolder
 import com.sonature.auth.domain.tenant.model.TenantRole
+import com.sonature.auth.domain.tenant.repository.TenantRepository
 import com.sonature.auth.domain.token.model.Algorithm
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -15,7 +16,8 @@ import java.util.UUID
 
 @Component
 class TenantContextFilter(
-    private val jwtService: JwtService
+    private val jwtService: JwtService,
+    private val tenantRepository: TenantRepository
 ) : OncePerRequestFilter() {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -39,9 +41,11 @@ class TenantContextFilter(
                     val role = tenantRoles[tenantSlug]
 
                     if (role != null) {
+                        val tenantId = tenantRepository.findBySlug(tenantSlug)?.id
                         TenantContextHolder.set(
                             TenantContext(
                                 tenantSlug = tenantSlug,
+                                tenantId = tenantId,
                                 userId = userId,
                                 role = role
                             )

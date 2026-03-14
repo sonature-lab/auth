@@ -3,6 +3,7 @@ package com.sonature.auth.infrastructure.security
 import com.sonature.auth.application.service.JwtService
 import com.sonature.auth.domain.tenant.context.TenantContextHolder
 import com.sonature.auth.domain.tenant.model.TenantRole
+import com.sonature.auth.domain.tenant.repository.TenantRepository
 import com.sonature.auth.domain.token.model.TokenClaims
 import com.sonature.auth.domain.token.model.TokenType
 import com.sonature.auth.domain.token.model.Algorithm
@@ -22,7 +23,8 @@ import java.util.UUID
 class TenantContextFilterTest {
 
     private val jwtService = mockk<JwtService>()
-    private val filter = TenantContextFilter(jwtService)
+    private val tenantRepository = mockk<TenantRepository>(relaxed = true)
+    private val filter = TenantContextFilter(jwtService, tenantRepository)
     private val filterChain = mockk<FilterChain>(relaxed = true)
 
     @AfterEach
@@ -38,6 +40,8 @@ class TenantContextFilterTest {
             addHeader("Authorization", "Bearer valid-token")
         }
         val response = MockHttpServletResponse()
+
+        every { tenantRepository.findBySlug("my-org") } returns null
 
         every { jwtService.verifyToken("valid-token", Algorithm.HS256) } returns TokenClaims(
             subject = userId.toString(),
@@ -109,6 +113,8 @@ class TenantContextFilterTest {
             addHeader("Authorization", "Bearer valid-token")
         }
         val response = MockHttpServletResponse()
+
+        every { tenantRepository.findBySlug("other-org") } returns null
 
         every { jwtService.verifyToken("valid-token", Algorithm.HS256) } returns TokenClaims(
             subject = userId.toString(),

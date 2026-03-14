@@ -1,9 +1,15 @@
 package com.sonature.auth.domain.tenant
 
 import com.sonature.auth.application.service.RefreshTokenService
+import com.sonature.auth.application.usecase.TokenRefreshUseCase
+import com.sonature.auth.domain.oauth2.entity.OAuth2ClientEntity
+import com.sonature.auth.domain.oauth2.repository.OAuth2ClientRepository
 import com.sonature.auth.domain.refresh.repository.RefreshTokenRepository
+import com.sonature.auth.domain.tenant.context.TenantContext
+import com.sonature.auth.domain.tenant.context.TenantContextHolder
 import com.sonature.auth.domain.tenant.entity.TenantEntity
 import com.sonature.auth.domain.tenant.entity.TenantMembershipEntity
+import com.sonature.auth.domain.tenant.exception.TenantMismatchException
 import com.sonature.auth.domain.tenant.model.TenantPlan
 import com.sonature.auth.domain.tenant.model.TenantRole
 import com.sonature.auth.domain.tenant.repository.TenantMembershipRepository
@@ -28,7 +34,13 @@ class TenantIsolationIntegrationTest {
     private lateinit var refreshTokenService: RefreshTokenService
 
     @Autowired
+    private lateinit var tokenRefreshUseCase: TokenRefreshUseCase
+
+    @Autowired
     private lateinit var refreshTokenRepository: RefreshTokenRepository
+
+    @Autowired
+    private lateinit var oauth2ClientRepository: OAuth2ClientRepository
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -196,5 +208,160 @@ class TenantIsolationIntegrationTest {
 
         assertEquals(TenantRole.OWNER, roleA)
         assertEquals(TenantRole.MEMBER, roleB)
+    }
+
+    @Test
+    fun `cross-tenant token refresh throws TenantMismatchException`() {
+        val tokenPair = tokenRefreshUseCase.issueTokenPair(
+            subject = user.id.toString(),
+            tenantId = tenantA.id
+        )
+
+        TenantContextHolder.set(
+            TenantContext(
+                tenantSlug = tenantB.slug,
+                tenantId = tenantB.id,
+                userId = user.id,
+                role = TenantRole.MEMBER
+            )
+        )
+
+        try {
+            assertThrows(TenantMismatchException::class.java) {
+                tokenRefreshUseCase.refreshTokens(tokenPair.refreshToken.value)
+            }
+        } finally {
+            TenantContextHolder.clear()
+        }
+    }
+
+    @Test
+    fun `global token refresh succeeds in any tenant context`() {
+        val tokenPair = tokenRefreshUseCase.issueTokenPair(
+            subject = user.id.toString(),
+            tenantId = null
+        )
+
+        TenantContextHolder.set(
+            TenantContext(
+                tenantSlug = tenantA.slug,
+                tenantId = tenantA.id,
+                userId = user.id,
+                role = TenantRole.OWNER
+            )
+        )
+
+        try {
+            val newTokenPair = tokenRefreshUseCase.refreshTokens(tokenPair.refreshToken.value)
+            assertNotNull(newTokenPair.accessToken)
+            assertNotNull(newTokenPair.refreshToken)
+        } finally {
+            TenantContextHolder.clear()
+        }
+    }
+
+    @Test
+    fun `revokeAllBySubjectAndTenant does not revoke global tokens`() {
+        val now = Instant.now()
+        val subject = user.id.toString()
+
+        refreshTokenService.storeRefreshToken(
+            tokenValue = "tenant-scoped-${System.nanoTime()}",
+            subject = subject,
+            clientId = null,
+            issuedAt = now,
+            expiresAt = now.plusSeconds(3600),
+            tenantId = tenantA.id
+        )
+
+        refreshTokenService.storeRefreshToken(
+            tokenValue = "global-token-${System.nanoTime()}",
+            subject = subject,
+            clientId = null,
+            issuedAt = now,
+            expiresAt = now.plusSeconds(3600),
+            tenantId = null
+        )
+
+        val revokedCount = refreshTokenRepository.revokeAllBySubjectAndTenant(
+            subject,
+            tenantA.id,
+            Instant.now()
+        )
+
+        assertEquals(1, revokedCount)
+
+        val activeTokens = refreshTokenRepository.findAllActiveBySubject(subject)
+        assertEquals(1, activeTokens.size)
+        assertNull(activeTokens[0].tenantId)
+    }
+
+    @Test
+    fun `OAuth2Client tenant-scoped query returns only matching tenant clients`() {
+        val ts = System.nanoTime()
+
+        val clientA = oauth2ClientRepository.save(
+            OAuth2ClientEntity(
+                id = "client-a-$ts",
+                clientId = "client-a-$ts",
+                clientName = "Client A",
+                redirectUris = "https://a.example.com/callback",
+                tenantId = tenantA.id
+            )
+        )
+
+        oauth2ClientRepository.save(
+            OAuth2ClientEntity(
+                id = "client-b-$ts",
+                clientId = "client-b-$ts",
+                clientName = "Client B",
+                redirectUris = "https://b.example.com/callback",
+                tenantId = tenantB.id
+            )
+        )
+
+        val tenantAClients = oauth2ClientRepository.findAllByTenantId(tenantA.id)
+        assertTrue(tenantAClients.any { it.clientId == clientA.clientId })
+        assertTrue(tenantAClients.none { it.tenantId == tenantB.id })
+
+        val foundByClientIdAndTenant = oauth2ClientRepository.findByClientIdAndTenantId(clientA.clientId, tenantA.id)
+        assertNotNull(foundByClientIdAndTenant)
+        assertEquals(tenantA.id, foundByClientIdAndTenant!!.tenantId)
+
+        val notFound = oauth2ClientRepository.findByClientIdAndTenantId(clientA.clientId, tenantB.id)
+        assertNull(notFound)
+    }
+
+    @Test
+    fun `OAuth2Client global client (null tenant) query works`() {
+        val ts = System.nanoTime()
+        val globalClientId = "global-client-$ts"
+
+        oauth2ClientRepository.save(
+            OAuth2ClientEntity(
+                id = globalClientId,
+                clientId = globalClientId,
+                clientName = "Global Client",
+                redirectUris = "https://global.example.com/callback",
+                tenantId = null
+            )
+        )
+
+        oauth2ClientRepository.save(
+            OAuth2ClientEntity(
+                id = "tenant-client-$ts",
+                clientId = "tenant-client-$ts",
+                clientName = "Tenant Client",
+                redirectUris = "https://tenant.example.com/callback",
+                tenantId = tenantA.id
+            )
+        )
+
+        val globalClient = oauth2ClientRepository.findByClientIdAndTenantIdIsNull(globalClientId)
+        assertNotNull(globalClient)
+        assertNull(globalClient!!.tenantId)
+
+        val tenantClientAsGlobal = oauth2ClientRepository.findByClientIdAndTenantIdIsNull("tenant-client-$ts")
+        assertNull(tenantClientAsGlobal)
     }
 }

@@ -5,6 +5,7 @@ import java.util.UUID
 
 data class TenantContext(
     val tenantSlug: String,
+    val tenantId: UUID? = null,
     val userId: UUID,
     val role: TenantRole
 )

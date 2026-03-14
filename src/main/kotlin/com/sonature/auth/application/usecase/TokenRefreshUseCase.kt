@@ -2,6 +2,8 @@ package com.sonature.auth.application.usecase
 
 import com.sonature.auth.application.service.JwtService
 import com.sonature.auth.application.service.RefreshTokenService
+import com.sonature.auth.domain.tenant.context.TenantContextHolder
+import com.sonature.auth.domain.tenant.exception.TenantMismatchException
 import com.sonature.auth.domain.token.model.Algorithm
 import com.sonature.auth.domain.token.model.TokenConfig
 import com.sonature.auth.domain.token.model.TokenPair
@@ -63,6 +65,15 @@ class TokenRefreshUseCase(
         )
 
         val oldTokenEntity = refreshTokenService.validateAndConsume(refreshToken)
+
+        val currentContext = TenantContextHolder.get()
+        val tokenTenantId = oldTokenEntity.tenantId
+
+        if (tokenTenantId != null && currentContext != null) {
+            if (currentContext.tenantId != tokenTenantId) {
+                throw TenantMismatchException(tokenTenantId, currentContext.tenantSlug)
+            }
+        }
 
         val newTokenPair = jwtService.issueTokenPair(
             subject = claims.subject,

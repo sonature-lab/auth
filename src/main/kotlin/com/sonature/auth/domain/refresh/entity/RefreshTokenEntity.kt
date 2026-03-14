@@ -15,7 +15,8 @@ import java.util.UUID
         Index(name = "idx_refresh_tokens_hash", columnList = "tokenHash", unique = true),
         Index(name = "idx_refresh_tokens_subject", columnList = "subject"),
         Index(name = "idx_refresh_tokens_expires", columnList = "expiresAt"),
-        Index(name = "idx_refresh_tokens_tenant", columnList = "tenant_id")
+        Index(name = "idx_refresh_tokens_tenant", columnList = "tenant_id"),
+        Index(name = "idx_refresh_tokens_subject_tenant", columnList = "subject, tenant_id")
     ]
 )
 class RefreshTokenEntity(
