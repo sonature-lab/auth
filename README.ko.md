@@ -347,8 +347,8 @@ auth/
 | Phase 1 | JWT/PASETO 토큰 프레임워크 | **완료** |
 | Phase 2 | OAuth2 / 소셜 로그인 / Consent | **완료** |
 | Phase 3 | 멀티테넌트 + RBAC | 예정 |
-| Phase 4 | SSO Hub | 예정 |
-| Phase 5 | 고급 보안 (MFA, Audit Log) | 예정 |
+
+> Phase 4 이후 (SSO Hub, 고급 보안)는 별도 저장소에서 개발됩니다.
 
 자세한 내용은 [ROADMAP.md](docs/ROADMAP.md)를 참고하세요.
 

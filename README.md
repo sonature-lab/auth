@@ -347,8 +347,8 @@ auth/
 | Phase 1 | JWT/PASETO Token Framework | **Done** |
 | Phase 2 | OAuth2 / Social Login / Consent | **Done** |
 | Phase 3 | Multi-tenant + RBAC | Upcoming |
-| Phase 4 | SSO Hub | Upcoming |
-| Phase 5 | Advanced Security (MFA, Audit Log) | Upcoming |
+
+> Phase 4+ (SSO Hub, Advanced Security) is developed in a separate repository.
 
 See [ROADMAP.md](docs/ROADMAP.md) for details.
 

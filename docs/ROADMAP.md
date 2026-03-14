@@ -93,23 +93,18 @@
 
 ---
 
-## Upcoming
+## Phase 3: Multi-tenant + RBAC (UPCOMING)
 
-### Phase 3: Multi-tenant + RBAC
-- Tenant (Organization) management
-- Row-level isolation RBAC
-- Permission-based authorization
-- Tenant-scoped API Key management
+This is the next phase for the open-source core.
 
-### Phase 4: SSO Hub
-- Cross-service SSO integration
-- Session management + token exchange
-- Service Registry
+- [ ] Tenant (Organization) management
+- [ ] Row-level isolation RBAC
+- [ ] Permission-based authorization
+- [ ] Tenant-scoped API Key management
 
-### Phase 5: Advanced Security
-- MFA (TOTP, WebAuthn/Passkey)
-- Device fingerprinting + anomaly detection
-- Audit Log, IP allowlist/blocklist
+---
+
+> **Phase 4+** (SSO Hub, Advanced Security) is developed in a separate private repository.
 
 ---
 
