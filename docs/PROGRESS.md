@@ -4,6 +4,61 @@
 
 ---
 
+## 2026-03-14 - Sprint 3.2: Role + Permission 체계
+
+### Completed
+- Domain Layer
+  - `TenantRole` enum (OWNER, ADMIN, MEMBER, VIEWER) — Permission 매핑 + hasPermission()
+  - `Permission` enum (8개: TENANT_MANAGE, TENANT_DELETE, MEMBER_INVITE, MEMBER_REMOVE, MEMBER_ROLE_CHANGE, API_KEY_MANAGE, AUTH_READ, AUTH_WRITE)
+  - `TenantMembershipEntity` — role 필드 추가 (default: MEMBER)
+- Application Layer
+  - `TenantService` — createTenant에 creatorUserId (OWNER 자동 등록), addMember에 role, changeMemberRole, getMemberRole
+- API Layer
+  - `PUT /api/v1/tenants/{slug}/members/{userId}/role` — 역할 변경 엔드포인트
+  - DTOs: ChangeMemberRoleRequest, AddMemberWithRoleRequest, TenantMemberResponse에 role 추가
+- 테스트 작성
+  - `TenantRolePermissionTest` (25 tests) — Role-Permission 매핑 전체 검증
+  - `TenantServiceTest` 확장 (14 → 26 tests)
+  - `TenantControllerIntegrationTest` 확장 (11 → 17 tests)
+  - 총 217개 테스트 전체 통과
+
+### Decisions Made
+1. **Role Hierarchy**: OWNER (8 perms) > ADMIN (7, no TENANT_DELETE) > MEMBER (2: AUTH_READ/WRITE) > VIEWER (1: AUTH_READ)
+2. **createTenant에 OWNER 자동 등록**: creatorUserId optional (하위 호환)
+3. **Permission 적용은 Sprint 3.3에서**: 여기서는 모델만 정의
+
+---
+
+## 2026-03-14 - Sprint 3.1: Tenant Entity + 기본 관리
+
+### Completed
+- Domain Layer
+  - `TenantEntity` — name, slug(unique), plan(TenantPlan), status(TenantStatus), timestamps
+  - `TenantMembershipEntity` — User ↔ Tenant 다대다 (unique constraint on tenant_id+user_id)
+  - `TenantPlan` enum (FREE, PRO, ENTERPRISE)
+  - `TenantStatus` enum (ACTIVE, SUSPENDED, DELETED)
+  - `TenantException` sealed class (4개: NotFound, SlugAlreadyExists, AlreadyMember, NotMember)
+  - `TenantRepository`, `TenantMembershipRepository`
+- Application Layer
+  - `TenantService` — createTenant, getTenantBySlug, addMember, getMembers, getUserTenants, removeMember
+- API Layer
+  - `TenantController` — POST/GET tenants, POST/GET/DELETE members
+  - DTOs: CreateTenantRequest, TenantResponse, AddMemberRequest, TenantMemberResponse
+  - `GlobalExceptionHandler` — Tenant 예외 핸들러 4개 추가
+- 테스트 작성
+  - `TenantServiceTest` (14 tests) — 단위 테스트
+  - `TenantControllerIntegrationTest` (11 tests) — 통합 테스트
+  - `SocialLoginIntegrationTest` — FK constraint 수정 (tenantMembership 삭제 순서)
+  - 총 178개 테스트 전체 통과
+
+### Decisions Made
+1. **TenantMembership**: 중간 테이블 패턴 (Sprint 3.2에서 Role 필드 추가 예정)
+2. **slug**: URL-safe 식별자, unique 인덱스
+3. **기존 엔티티 무변경**: tenant_id 추가는 Sprint 3.4에서 처리
+4. **SecurityConfig**: /api/v1/** permitAll 이미 적용됨 (별도 수정 불필요)
+
+---
+
 ## 2026-03-14 - Sprint 2.4: Consent UI + Scope 관리
 
 ### Completed

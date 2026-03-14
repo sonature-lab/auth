@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AuthController (POST /api/v1/auth/signup, POST /api/v1/auth/login)
   - Auth exceptions (EmailAlreadyExists, InvalidCredentials, UserSuspended)
   - Unit tests (6) + Integration tests (7)
+- **Sprint 3.2**: Role + Permission System
+  - TenantRole enum (OWNER, ADMIN, MEMBER, VIEWER) with permission hierarchy
+  - Permission enum (8 permissions)
+  - Role-Permission mapping with hasPermission() method
+  - TenantMembershipEntity: role field added
+  - Auto-OWNER assignment on tenant creation
+  - PUT /api/v1/tenants/{slug}/members/{userId}/role endpoint
+  - Unit tests (25) + updated existing tests
+- **Sprint 3.1**: Tenant Entity + Basic Management
+  - TenantEntity (name, slug, plan, status)
+  - TenantMembershipEntity (User ↔ Tenant many-to-many)
+  - TenantPlan enum (FREE, PRO, ENTERPRISE)
+  - TenantService (CRUD + member management)
+  - TenantController (POST/GET tenants, POST/GET/DELETE members)
+  - Tenant exception handling (4 types)
+  - Unit tests (14) + Integration tests (11)
 - **Sprint 2.4**: Consent UI + Scope Management
   - ConsentController (GET /oauth2/consent) with Thymeleaf template
   - ScopeDefinition model (openid, profile, email, auth:read, auth:write)

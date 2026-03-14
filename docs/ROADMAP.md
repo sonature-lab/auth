@@ -93,14 +93,36 @@
 
 ---
 
-## Phase 3: Multi-tenant + RBAC (UPCOMING)
+## Phase 3: Multi-tenant + RBAC (IN PROGRESS)
 
-This is the next phase for the open-source core.
+### Sprint 3.1 - Tenant Entity + Basic Management ✅
+- [x] TenantEntity (name, slug, plan, status)
+- [x] TenantPlan enum (FREE, PRO, ENTERPRISE)
+- [x] TenantMembershipEntity (User ↔ Tenant many-to-many)
+- [x] TenantService (CRUD + member management)
+- [x] TenantController (`/api/v1/tenants`)
+- [x] Tenant exception handling
+- [x] Unit tests (14) + Integration tests (11)
 
-- [ ] Tenant (Organization) management
-- [ ] Row-level isolation RBAC
-- [ ] Permission-based authorization
+### Sprint 3.2 - Role + Permission ✅
+- [x] TenantRole enum (OWNER, ADMIN, MEMBER, VIEWER) with hierarchy
+- [x] Permission enum (8 permissions: TENANT_MANAGE, MEMBER_INVITE, AUTH_READ, etc.)
+- [x] Role ↔ Permission mapping with `hasPermission()` method
+- [x] TenantMembershipEntity: added `role` field
+- [x] TenantService: auto-OWNER on create, role assignment, role change
+- [x] PUT /api/v1/tenants/{slug}/members/{userId}/role endpoint
+- [x] Unit tests (25) + updated existing tests
+
+### Sprint 3.3 - Authorization Enforcement
+- [ ] Permission-based access control
+- [ ] Tenant context resolver
+- [ ] JWT claims with tenant/role info
 - [ ] Tenant-scoped API Key management
+
+### Sprint 3.4 - Tenant Isolation
+- [ ] Add tenant association to existing entities
+- [ ] Row-level data isolation
+- [ ] Full integration tests
 
 ---
 

@@ -6,10 +6,10 @@
 
 | 항목 | 상태 |
 |------|------|
-| Phase | **Phase 2 - Sprint 2.4 완료 (Phase 2 완료)** |
-| 현재 진행률 | Phase 2: 100% (Sprint 2.1~2.4 완료) |
+| Phase | **Phase 3 - Sprint 3.2 완료** |
+| 현재 진행률 | Phase 3: 50% (Sprint 3.1~3.2 완료, 3.3~3.4 남음) |
 | 블로커 | 없음 |
-| 전체 테스트 | 149개 통과 |
+| 전체 테스트 | 217개 통과 |
 
 ---
 
@@ -28,7 +28,7 @@
 | Swagger UI | **Done** | - | SpringDoc OpenAPI |
 | Prometheus 메트릭 | **Done** | - | Micrometer |
 
-### Phase 2: OAuth2 / Social Login (IN PROGRESS)
+### Phase 2: OAuth2 / Social Login (DONE)
 
 | 기능 | 상태 | 테스트 | 비고 |
 |------|------|--------|------|
@@ -60,12 +60,29 @@
 | `/oauth2/jwks` | GET | **Done** | 2 |
 | `/.well-known/openid-configuration` | GET | **Done** | 2 |
 | `/login` | GET | **Done** | 2 |
+| `/api/v1/tenants` | POST | **Done** | 3 |
+| `/api/v1/tenants/{slug}` | GET | **Done** | 3 |
+| `/api/v1/tenants/{slug}/members` | POST | **Done** | 3 |
+| `/api/v1/tenants/{slug}/members` | GET | **Done** | 3 |
+| `/api/v1/tenants/{slug}/members/{userId}` | DELETE | **Done** | 3 |
+
+---
+
+### Phase 3: Multi-tenant + RBAC (IN PROGRESS)
+
+| 기능 | 상태 | 테스트 | 비고 |
+|------|------|--------|------|
+| Tenant Entity | **Done** | - | Sprint 3.1 |
+| Tenant CRUD + 멤버 관리 | **Done** | 25 tests | /api/v1/tenants |
+| Role + Permission | **Done** | 25 tests | Sprint 3.2 (OWNER/ADMIN/MEMBER/VIEWER + 8 permissions) |
+| Authorization 적용 | Not Started | - | Sprint 3.3 예정 |
+| Tenant 격리 | Not Started | - | Sprint 3.4 예정 |
 
 ---
 
 ## Test Coverage
 
-**테스트 현황**: 149개 전체 통과
+**테스트 현황**: 217개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -80,6 +97,9 @@
 | Social Login 통합 테스트 | 6 |
 | Scope 단위 테스트 | 12 |
 | Consent 통합 테스트 | 4 |
+| Tenant 단위 테스트 | 26 |
+| Tenant 통합 테스트 | 17 |
+| Role/Permission 단위 테스트 | 25 |
 
 ---
 
@@ -91,4 +111,5 @@
 
 ## Next Actions
 
-1. **Phase 3**: Multi-tenant + RBAC
+1. **Sprint 3.3**: Authorization 적용
+3. **Sprint 3.4**: 기존 기능 Tenant 격리
