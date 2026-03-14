@@ -8,6 +8,10 @@ import com.sonature.auth.domain.token.exception.TokenExpiredException
 import com.sonature.auth.domain.token.exception.TokenInvalidException
 import com.sonature.auth.domain.token.exception.TokenMalformedException
 import com.sonature.auth.domain.token.exception.UnsupportedAlgorithmException
+import com.sonature.auth.domain.tenant.exception.AlreadyTenantMemberException
+import com.sonature.auth.domain.tenant.exception.NotTenantMemberException
+import com.sonature.auth.domain.tenant.exception.TenantNotFoundException
+import com.sonature.auth.domain.tenant.exception.TenantSlugAlreadyExistsException
 import com.sonature.auth.domain.user.exception.AuthException
 import com.sonature.auth.domain.user.exception.EmailAlreadyExistsException
 import com.sonature.auth.domain.user.exception.InvalidCredentialsException
@@ -109,6 +113,34 @@ class GlobalExceptionHandler {
     fun handleUserSuspended(ex: UserSuspendedException): ResponseEntity<ApiResponse<Nothing>> {
         val error = ApiError(code = ex.errorCode, message = ex.message)
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(TenantNotFoundException::class)
+    fun handleTenantNotFound(ex: TenantNotFoundException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(TenantSlugAlreadyExistsException::class)
+    fun handleTenantSlugExists(ex: TenantSlugAlreadyExistsException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(AlreadyTenantMemberException::class)
+    fun handleAlreadyTenantMember(ex: AlreadyTenantMemberException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(NotTenantMemberException::class)
+    fun handleNotTenantMember(ex: NotTenantMemberException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(ApiResponse.error(error))
     }
 

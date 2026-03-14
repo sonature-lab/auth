@@ -1,5 +1,6 @@
 package com.sonature.auth.infrastructure.oauth2
 
+import com.sonature.auth.domain.tenant.repository.TenantMembershipRepository
 import com.sonature.auth.domain.user.entity.UserEntity
 import com.sonature.auth.domain.user.model.AuthProvider
 import com.sonature.auth.domain.user.model.UserStatus
@@ -26,8 +27,12 @@ class SocialLoginIntegrationTest {
     @Autowired
     private lateinit var userRepository: UserRepository
 
+    @Autowired
+    private lateinit var tenantMembershipRepository: TenantMembershipRepository
+
     @BeforeEach
     fun setUp() {
+        tenantMembershipRepository.deleteAll()
         userRepository.deleteAll()
     }
 
