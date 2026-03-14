@@ -4,6 +4,7 @@ import com.sonature.auth.common.util.TimeProvider
 import com.sonature.auth.domain.token.model.Algorithm
 import com.sonature.auth.domain.token.model.TokenPair
 import com.sonature.auth.domain.user.entity.UserEntity
+import com.sonature.auth.domain.tenant.repository.TenantMembershipRepository
 import com.sonature.auth.domain.user.exception.EmailAlreadyExistsException
 import com.sonature.auth.domain.user.exception.InvalidCredentialsException
 import com.sonature.auth.domain.user.exception.UserSuspendedException
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class AuthService(
     private val userRepository: UserRepository,
+    private val tenantMembershipRepository: TenantMembershipRepository,
     private val tokenRefreshUseCase: TokenRefreshUseCase,
     private val passwordEncoder: PasswordEncoder,
     private val timeProvider: TimeProvider
@@ -73,5 +75,15 @@ class AuthService(
         put("email", user.email)
         put("provider", user.provider.name)
         user.name?.let { put("name", it) }
+
+        val memberships = tenantMembershipRepository.findAllByUser(user)
+        if (memberships.isNotEmpty()) {
+            put("tenants", memberships.map { membership ->
+                mapOf(
+                    "slug" to membership.tenant.slug,
+                    "role" to membership.role.name
+                )
+            })
+        }
     }
 }

@@ -7,8 +7,11 @@ import com.sonature.auth.api.v1.tenant.dto.CreateTenantRequest
 import com.sonature.auth.api.v1.tenant.dto.TenantMemberResponse
 import com.sonature.auth.api.v1.tenant.dto.TenantResponse
 import com.sonature.auth.application.service.TenantService
+import com.sonature.auth.domain.tenant.context.TenantContextHolder
 import com.sonature.auth.domain.tenant.entity.TenantEntity
 import com.sonature.auth.domain.tenant.entity.TenantMembershipEntity
+import com.sonature.auth.domain.tenant.model.Permission
+import com.sonature.auth.infrastructure.security.RequirePermission
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
@@ -55,6 +58,7 @@ class TenantController(
         return ResponseEntity.ok(ApiResponse.success(toTenantResponse(tenant)))
     }
 
+    @RequirePermission(Permission.MEMBER_INVITE)
     @Operation(summary = "Add member", description = "Add a user to a tenant")
     @PostMapping("/{slug}/members")
     fun addMember(
@@ -77,6 +81,7 @@ class TenantController(
         )
     }
 
+    @RequirePermission(Permission.MEMBER_ROLE_CHANGE)
     @Operation(summary = "Change member role", description = "Change a member's role in a tenant")
     @PutMapping("/{slug}/members/{userId}/role")
     fun changeMemberRole(
@@ -88,6 +93,7 @@ class TenantController(
         return ResponseEntity.ok(ApiResponse.success(toMemberResponse(membership)))
     }
 
+    @RequirePermission(Permission.MEMBER_REMOVE)
     @Operation(summary = "Remove member", description = "Remove a user from a tenant")
     @DeleteMapping("/{slug}/members/{userId}")
     fun removeMember(

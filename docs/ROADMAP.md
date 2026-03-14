@@ -113,11 +113,14 @@
 - [x] PUT /api/v1/tenants/{slug}/members/{userId}/role endpoint
 - [x] Unit tests (25) + updated existing tests
 
-### Sprint 3.3 - Authorization Enforcement
-- [ ] Permission-based access control
-- [ ] Tenant context resolver
-- [ ] JWT claims with tenant/role info
-- [ ] Tenant-scoped API Key management
+### Sprint 3.3 - Authorization Enforcement ✅
+- [x] TenantContext + TenantContextHolder (ThreadLocal-based)
+- [x] TenantContextFilter (X-Tenant-Slug header + JWT tenant claims)
+- [x] @RequirePermission annotation + PermissionAspect (AOP)
+- [x] JWT claims에 tenant/role 정보 포함
+- [x] TenantController 엔드포인트 Permission 적용 (addMember, changeMemberRole, removeMember)
+- [x] Authorization exceptions (InsufficientPermission, TenantContextRequired, InvalidAccessToken)
+- [x] Unit tests (15) + Integration tests (11+2)
 
 ### Sprint 3.4 - Tenant Isolation
 - [ ] Add tenant association to existing entities

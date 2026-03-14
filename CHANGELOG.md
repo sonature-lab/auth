@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AuthController (POST /api/v1/auth/signup, POST /api/v1/auth/login)
   - Auth exceptions (EmailAlreadyExists, InvalidCredentials, UserSuspended)
   - Unit tests (6) + Integration tests (7)
+- **Sprint 3.3**: Authorization Enforcement
+  - TenantContext + TenantContextHolder (ThreadLocal tenant context)
+  - TenantContextFilter (X-Tenant-Slug header + Bearer token → tenant context)
+  - @RequirePermission annotation + PermissionAspect (AOP-based permission check)
+  - JWT claims에 tenant memberships (slug + role) 포함
+  - TenantController endpoints에 Permission 적용 (MEMBER_INVITE, MEMBER_REMOVE, MEMBER_ROLE_CHANGE)
+  - Authorization exceptions (InsufficientPermission, TenantContextRequired, InvalidAccessToken)
+  - spring-boot-starter-aop dependency
+  - Unit tests (15) + Integration tests (13)
 - **Sprint 3.2**: Role + Permission System
   - TenantRole enum (OWNER, ADMIN, MEMBER, VIEWER) with permission hierarchy
   - Permission enum (8 permissions)

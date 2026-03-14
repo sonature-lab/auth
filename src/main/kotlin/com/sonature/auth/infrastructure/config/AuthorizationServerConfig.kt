@@ -29,6 +29,8 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher
 import com.sonature.auth.infrastructure.oauth2.CustomOAuth2UserService
 import com.sonature.auth.infrastructure.oauth2.OAuth2LoginSuccessHandler
+import com.sonature.auth.infrastructure.security.TenantContextFilter
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
@@ -39,7 +41,8 @@ import java.util.UUID
 @Configuration
 class AuthorizationServerConfig(
     private val customOAuth2UserService: CustomOAuth2UserService,
-    private val oAuth2LoginSuccessHandler: OAuth2LoginSuccessHandler
+    private val oAuth2LoginSuccessHandler: OAuth2LoginSuccessHandler,
+    private val tenantContextFilter: TenantContextFilter
 ) {
 
     @Bean
@@ -82,6 +85,7 @@ class AuthorizationServerConfig(
             .headers { headers ->
                 headers.frameOptions { it.disable() }
             }
+            .addFilterBefore(tenantContextFilter, UsernamePasswordAuthenticationFilter::class.java)
             .formLogin(Customizer.withDefaults())
             .oauth2Login { oauth2 ->
                 oauth2.userInfoEndpoint { userInfo ->

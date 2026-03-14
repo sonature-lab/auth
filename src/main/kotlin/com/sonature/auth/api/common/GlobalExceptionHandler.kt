@@ -9,7 +9,10 @@ import com.sonature.auth.domain.token.exception.TokenInvalidException
 import com.sonature.auth.domain.token.exception.TokenMalformedException
 import com.sonature.auth.domain.token.exception.UnsupportedAlgorithmException
 import com.sonature.auth.domain.tenant.exception.AlreadyTenantMemberException
+import com.sonature.auth.domain.tenant.exception.InsufficientPermissionException
+import com.sonature.auth.domain.tenant.exception.InvalidAccessTokenException
 import com.sonature.auth.domain.tenant.exception.NotTenantMemberException
+import com.sonature.auth.domain.tenant.exception.TenantContextRequiredException
 import com.sonature.auth.domain.tenant.exception.TenantNotFoundException
 import com.sonature.auth.domain.tenant.exception.TenantSlugAlreadyExistsException
 import com.sonature.auth.domain.user.exception.AuthException
@@ -113,6 +116,27 @@ class GlobalExceptionHandler {
     fun handleUserSuspended(ex: UserSuspendedException): ResponseEntity<ApiResponse<Nothing>> {
         val error = ApiError(code = ex.errorCode, message = ex.message)
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(InsufficientPermissionException::class)
+    fun handleInsufficientPermission(ex: InsufficientPermissionException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(TenantContextRequiredException::class)
+    fun handleTenantContextRequired(ex: TenantContextRequiredException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(InvalidAccessTokenException::class)
+    fun handleInvalidAccessToken(ex: InvalidAccessTokenException): ResponseEntity<ApiResponse<Nothing>> {
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
             .body(ApiResponse.error(error))
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.sonature.auth.api.v1.tenant.dto.AddMemberRequest
 import com.sonature.auth.api.v1.tenant.dto.ChangeMemberRoleRequest
 import com.sonature.auth.api.v1.tenant.dto.CreateTenantRequest
+import com.sonature.auth.application.service.JwtService
 import com.sonature.auth.domain.tenant.model.TenantPlan
 import com.sonature.auth.domain.tenant.model.TenantRole
 import com.sonature.auth.domain.user.entity.UserEntity
@@ -35,7 +36,11 @@ class TenantControllerIntegrationTest {
     @Autowired
     private lateinit var userRepository: UserRepository
 
+    @Autowired
+    private lateinit var jwtService: JwtService
+
     private lateinit var testUser: UserEntity
+    private lateinit var secondUser: UserEntity
 
     @BeforeEach
     fun setUp() {
@@ -45,6 +50,24 @@ class TenantControllerIntegrationTest {
                 name = "Tenant Test User"
             )
         )
+        secondUser = userRepository.save(
+            UserEntity(
+                email = "second-${System.nanoTime()}@example.com",
+                name = "Second User"
+            )
+        )
+    }
+
+    private fun issueTokenWithTenant(userId: String, tenantSlug: String, role: TenantRole): String {
+        val token = jwtService.issueAccessToken(
+            subject = userId,
+            customClaims = mapOf(
+                "tenants" to listOf(
+                    mapOf("slug" to tenantSlug, "role" to role.name)
+                )
+            )
+        )
+        return token.value
     }
 
     // --- POST /api/v1/tenants ---
@@ -95,13 +118,11 @@ class TenantControllerIntegrationTest {
         val slug = "dup-slug-${System.nanoTime()}"
         val request = CreateTenantRequest(name = "First", slug = slug)
 
-        // Create first tenant
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
         }.andExpect { status { isCreated() } }
 
-        // Create duplicate
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
@@ -167,28 +188,72 @@ class TenantControllerIntegrationTest {
             }
     }
 
-    // --- POST /api/v1/tenants/{slug}/members ---
+    // --- POST /api/v1/tenants/{slug}/members (requires MEMBER_INVITE) ---
 
     @Test
     fun `POST members should add member and return 201`() {
         val slug = "member-tenant-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Member Test", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Member Test", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        val addRequest = AddMemberRequest(userId = testUser.id.toString())
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+        val addRequest = AddMemberRequest(userId = secondUser.id.toString())
 
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(addRequest)
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect {
             status { isCreated() }
-            jsonPath("$.data.userId") { value(testUser.id.toString()) }
-            jsonPath("$.data.email") { value(testUser.email) }
-            jsonPath("$.data.name") { value("Tenant Test User") }
+            jsonPath("$.data.userId") { value(secondUser.id.toString()) }
+            jsonPath("$.data.email") { value(secondUser.email) }
             jsonPath("$.data.role") { value("MEMBER") }
             jsonPath("$.data.joinedAt") { isNotEmpty() }
+        }
+    }
+
+    @Test
+    fun `POST members without permission should return 403`() {
+        val slug = "noperm-member-${System.nanoTime()}"
+        mockMvc.post("/api/v1/tenants") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "No Perm", slug = slug, creatorUserId = testUser.id.toString())
+            )
+        }.andExpect { status { isCreated() } }
+
+        val viewerToken = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.VIEWER)
+
+        mockMvc.post("/api/v1/tenants/$slug/members") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $viewerToken")
+            header("X-Tenant-Slug", slug)
+        }.andExpect {
+            status { isForbidden() }
+            jsonPath("$.error.code") { value("INSUFFICIENT_PERMISSION") }
+        }
+    }
+
+    @Test
+    fun `POST members without tenant context should return 400`() {
+        val slug = "nocontext-${System.nanoTime()}"
+        mockMvc.post("/api/v1/tenants") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "No Context", slug = slug))
+        }.andExpect { status { isCreated() } }
+
+        mockMvc.post("/api/v1/tenants/$slug/members") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = testUser.id.toString()))
+        }.andExpect {
+            status { isBadRequest() }
+            jsonPath("$.error.code") { value("TENANT_CONTEXT_REQUIRED") }
         }
     }
 
@@ -197,21 +262,25 @@ class TenantControllerIntegrationTest {
         val slug = "dup-member-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Dup Member Test", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Dup Member Test", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        val addRequest = AddMemberRequest(userId = testUser.id.toString())
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
 
-        // Add first time
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(addRequest)
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect { status { isCreated() } }
 
-        // Add duplicate
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(addRequest)
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect {
             status { isConflict() }
             jsonPath("$.error.code") { value("ALREADY_TENANT_MEMBER") }
@@ -225,23 +294,24 @@ class TenantControllerIntegrationTest {
         val slug = "list-members-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "List Members", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "List Members", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        // Add member
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(AddMemberRequest(userId = testUser.id.toString()))
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect { status { isCreated() } }
 
-        // Get members
         mockMvc.get("/api/v1/tenants/$slug/members")
             .andExpect {
                 status { isOk() }
-                jsonPath("$.data.length()") { value(1) }
-                jsonPath("$.data[0].userId") { value(testUser.id.toString()) }
-                jsonPath("$.data[0].email") { value(testUser.email) }
-                jsonPath("$.data[0].role") { value("MEMBER") }
+                jsonPath("$.data.length()") { value(2) }
             }
     }
 
@@ -260,33 +330,38 @@ class TenantControllerIntegrationTest {
             }
     }
 
-    // --- DELETE /api/v1/tenants/{slug}/members/{userId} ---
+    // --- DELETE /api/v1/tenants/{slug}/members/{userId} (requires MEMBER_REMOVE) ---
 
     @Test
     fun `DELETE member should remove and return 204`() {
         val slug = "del-member-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Del Member", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Del Member", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        // Add member
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(AddMemberRequest(userId = testUser.id.toString()))
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect { status { isCreated() } }
 
-        // Remove member
-        mockMvc.delete("/api/v1/tenants/$slug/members/${testUser.id}")
-            .andExpect {
-                status { isNoContent() }
-            }
+        mockMvc.delete("/api/v1/tenants/$slug/members/${secondUser.id}") {
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
+        }.andExpect {
+            status { isNoContent() }
+        }
 
-        // Verify removed
         mockMvc.get("/api/v1/tenants/$slug/members")
             .andExpect {
                 status { isOk() }
-                jsonPath("$.data.length()") { value(0) }
+                jsonPath("$.data.length()") { value(1) }
             }
     }
 
@@ -295,40 +370,51 @@ class TenantControllerIntegrationTest {
         val slug = "notmember-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Not Member", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Not Member", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        mockMvc.delete("/api/v1/tenants/$slug/members/${testUser.id}")
-            .andExpect {
-                status { isNotFound() }
-                jsonPath("$.error.code") { value("NOT_TENANT_MEMBER") }
-            }
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+
+        mockMvc.delete("/api/v1/tenants/$slug/members/${secondUser.id}") {
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
+        }.andExpect {
+            status { isNotFound() }
+            jsonPath("$.error.code") { value("NOT_TENANT_MEMBER") }
+        }
     }
 
-    // --- PUT /api/v1/tenants/{slug}/members/{userId}/role ---
+    // --- PUT /api/v1/tenants/{slug}/members/{userId}/role (requires MEMBER_ROLE_CHANGE) ---
 
     @Test
     fun `PUT member role should change role and return 200`() {
         val slug = "role-change-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Role Change", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Role Change", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        // Add member
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(AddMemberRequest(userId = testUser.id.toString()))
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect { status { isCreated() } }
 
-        // Change role to ADMIN
-        val roleRequest = ChangeMemberRoleRequest(role = TenantRole.ADMIN)
-        mockMvc.put("/api/v1/tenants/$slug/members/${testUser.id}/role") {
+        mockMvc.put("/api/v1/tenants/$slug/members/${secondUser.id}/role") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(roleRequest)
+            content = objectMapper.writeValueAsString(ChangeMemberRoleRequest(role = TenantRole.ADMIN))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect {
             status { isOk() }
-            jsonPath("$.data.userId") { value(testUser.id.toString()) }
+            jsonPath("$.data.userId") { value(secondUser.id.toString()) }
             jsonPath("$.data.role") { value("ADMIN") }
         }
     }
@@ -338,13 +424,18 @@ class TenantControllerIntegrationTest {
         val slug = "role-nonmember-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Role Non Member", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Role Non Member", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        val roleRequest = ChangeMemberRoleRequest(role = TenantRole.ADMIN)
-        mockMvc.put("/api/v1/tenants/$slug/members/${testUser.id}/role") {
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+
+        mockMvc.put("/api/v1/tenants/$slug/members/${secondUser.id}/role") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(roleRequest)
+            content = objectMapper.writeValueAsString(ChangeMemberRoleRequest(role = TenantRole.ADMIN))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect {
             status { isNotFound() }
             jsonPath("$.error.code") { value("NOT_TENANT_MEMBER") }
@@ -356,26 +447,31 @@ class TenantControllerIntegrationTest {
         val slug = "role-persist-${System.nanoTime()}"
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Role Persist", slug = slug))
+            content = objectMapper.writeValueAsString(
+                CreateTenantRequest(name = "Role Persist", slug = slug, creatorUserId = testUser.id.toString())
+            )
         }.andExpect { status { isCreated() } }
 
-        // Add member
+        val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
+
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(AddMemberRequest(userId = testUser.id.toString()))
+            content = objectMapper.writeValueAsString(AddMemberRequest(userId = secondUser.id.toString()))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect { status { isCreated() } }
 
-        // Change role
-        mockMvc.put("/api/v1/tenants/$slug/members/${testUser.id}/role") {
+        mockMvc.put("/api/v1/tenants/$slug/members/${secondUser.id}/role") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(ChangeMemberRoleRequest(role = TenantRole.OWNER))
+            header("Authorization", "Bearer $token")
+            header("X-Tenant-Slug", slug)
         }.andExpect { status { isOk() } }
 
-        // Verify via GET members
         mockMvc.get("/api/v1/tenants/$slug/members")
             .andExpect {
                 status { isOk() }
-                jsonPath("$.data[0].role") { value("OWNER") }
+                jsonPath("$.data[?(@.userId == '${secondUser.id}')].role") { value("OWNER") }
             }
     }
 
@@ -399,7 +495,6 @@ class TenantControllerIntegrationTest {
             jsonPath("$.data.slug") { value(slug) }
         }
 
-        // Verify creator is OWNER member
         mockMvc.get("/api/v1/tenants/$slug/members")
             .andExpect {
                 status { isOk() }

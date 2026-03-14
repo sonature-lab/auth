@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-14 - Sprint 3.3: Authorization 적용
+
+### Completed
+- Infrastructure Layer
+  - `TenantContext` + `TenantContextHolder` — ThreadLocal 기반 tenant context
+  - `TenantContextFilter` — X-Tenant-Slug 헤더 + Bearer JWT → tenant context 설정
+  - `@RequirePermission` annotation + `PermissionAspect` (AOP) — 메서드 레벨 Permission 체크
+- Domain Layer
+  - `AuthorizationException` sealed class — InsufficientPermission, TenantContextRequired, InvalidAccessToken
+- Application Layer
+  - `AuthService.buildUserClaims()` — JWT claims에 tenant memberships (slug + role) 포함
+- API Layer
+  - `TenantController` — addMember(@RequirePermission MEMBER_INVITE), changeMemberRole(MEMBER_ROLE_CHANGE), removeMember(MEMBER_REMOVE)
+  - `GlobalExceptionHandler` — 3개 Authorization 예외 핸들러 추가
+- Configuration
+  - `build.gradle` — spring-boot-starter-aop 추가
+  - `AuthorizationServerConfig` — TenantContextFilter 등록
+- 테스트 작성
+  - `TenantContextFilterTest` (9 tests) — 컨텍스트 설정/해제, 토큰 파싱, edge cases
+  - `PermissionAspectTest` (6 tests) — 권한별 proceed/deny 검증
+  - `AuthorizationIntegrationTest` (11 tests) — OWNER/ADMIN/MEMBER/VIEWER 권한 E2E
+  - `TenantControllerIntegrationTest` 확장 (17 → 19 tests) — 권한 테스트 추가
+  - `AuthServiceTest` — tenantMembershipRepository mock 추가
+  - 총 245개 테스트 전체 통과
+
+### Decisions Made
+1. **ThreadLocal TenantContext**: Virtual Thread 환경에서도 요청 스코프 내 안전 (Spring Boot 3.5 기본 설정)
+2. **X-Tenant-Slug 헤더**: 멀티 테넌트 API 호출 시 tenant 식별
+3. **JWT claims 구조**: `tenants: [{slug, role}, ...]` 배열 — 다중 테넌트 멤버십 지원
+4. **AOP 기반 Permission 체크**: 컨트롤러 코드 깔끔하게 유지, 관심사 분리
+
+---
+
 ## 2026-03-14 - Sprint 3.2: Role + Permission 체계
 
 ### Completed

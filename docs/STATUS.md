@@ -6,10 +6,10 @@
 
 | 항목 | 상태 |
 |------|------|
-| Phase | **Phase 3 - Sprint 3.2 완료** |
-| 현재 진행률 | Phase 3: 50% (Sprint 3.1~3.2 완료, 3.3~3.4 남음) |
+| Phase | **Phase 3 - Sprint 3.3 완료** |
+| 현재 진행률 | Phase 3: 75% (Sprint 3.1~3.3 완료, 3.4 남음) |
 | 블로커 | 없음 |
-| 전체 테스트 | 217개 통과 |
+| 전체 테스트 | 245개 통과 |
 
 ---
 
@@ -65,6 +65,7 @@
 | `/api/v1/tenants/{slug}/members` | POST | **Done** | 3 |
 | `/api/v1/tenants/{slug}/members` | GET | **Done** | 3 |
 | `/api/v1/tenants/{slug}/members/{userId}` | DELETE | **Done** | 3 |
+| `/api/v1/tenants/{slug}/members/{userId}/role` | PUT | **Done** | 3 |
 
 ---
 
@@ -73,16 +74,16 @@
 | 기능 | 상태 | 테스트 | 비고 |
 |------|------|--------|------|
 | Tenant Entity | **Done** | - | Sprint 3.1 |
-| Tenant CRUD + 멤버 관리 | **Done** | 25 tests | /api/v1/tenants |
+| Tenant CRUD + 멤버 관리 | **Done** | 19 tests | /api/v1/tenants |
 | Role + Permission | **Done** | 25 tests | Sprint 3.2 (OWNER/ADMIN/MEMBER/VIEWER + 8 permissions) |
-| Authorization 적용 | Not Started | - | Sprint 3.3 예정 |
+| Authorization 적용 | **Done** | 26 tests | Sprint 3.3 (TenantContext + @RequirePermission + AOP) |
 | Tenant 격리 | Not Started | - | Sprint 3.4 예정 |
 
 ---
 
 ## Test Coverage
 
-**테스트 현황**: 217개 전체 통과
+**테스트 현황**: 245개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -98,8 +99,11 @@
 | Scope 단위 테스트 | 12 |
 | Consent 통합 테스트 | 4 |
 | Tenant 단위 테스트 | 26 |
-| Tenant 통합 테스트 | 17 |
+| Tenant 통합 테스트 | 19 |
 | Role/Permission 단위 테스트 | 25 |
+| TenantContextFilter 단위 테스트 | 9 |
+| PermissionAspect 단위 테스트 | 6 |
+| Authorization 통합 테스트 | 11 |
 
 ---
 
@@ -111,5 +115,4 @@
 
 ## Next Actions
 
-1. **Sprint 3.3**: Authorization 적용
-3. **Sprint 3.4**: 기존 기능 Tenant 격리
+1. **Sprint 3.4**: 기존 기능 Tenant 격리

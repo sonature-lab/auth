@@ -11,6 +11,7 @@ import com.sonature.auth.domain.user.exception.InvalidCredentialsException
 import com.sonature.auth.domain.user.exception.UserSuspendedException
 import com.sonature.auth.domain.user.model.AuthProvider
 import com.sonature.auth.domain.user.model.UserStatus
+import com.sonature.auth.domain.tenant.repository.TenantMembershipRepository
 import com.sonature.auth.domain.user.repository.UserRepository
 import com.sonature.auth.application.usecase.TokenRefreshUseCase
 import io.mockk.every
@@ -28,6 +29,7 @@ import java.time.Instant
 class AuthServiceTest {
 
     private lateinit var userRepository: UserRepository
+    private lateinit var tenantMembershipRepository: TenantMembershipRepository
     private lateinit var tokenRefreshUseCase: TokenRefreshUseCase
     private lateinit var passwordEncoder: PasswordEncoder
     private lateinit var timeProvider: TimeProvider
@@ -38,12 +40,14 @@ class AuthServiceTest {
     @BeforeEach
     fun setUp() {
         userRepository = mockk()
+        tenantMembershipRepository = mockk()
         tokenRefreshUseCase = mockk()
         passwordEncoder = mockk()
         timeProvider = mockk()
         every { timeProvider.now() } returns now
+        every { tenantMembershipRepository.findAllByUser(any()) } returns emptyList()
 
-        authService = AuthService(userRepository, tokenRefreshUseCase, passwordEncoder, timeProvider)
+        authService = AuthService(userRepository, tenantMembershipRepository, tokenRefreshUseCase, passwordEncoder, timeProvider)
     }
 
     private fun mockTokenPair(): TokenPair {
