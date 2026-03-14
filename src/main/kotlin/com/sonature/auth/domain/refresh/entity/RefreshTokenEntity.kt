@@ -14,7 +14,8 @@ import java.util.UUID
     indexes = [
         Index(name = "idx_refresh_tokens_hash", columnList = "tokenHash", unique = true),
         Index(name = "idx_refresh_tokens_subject", columnList = "subject"),
-        Index(name = "idx_refresh_tokens_expires", columnList = "expiresAt")
+        Index(name = "idx_refresh_tokens_expires", columnList = "expiresAt"),
+        Index(name = "idx_refresh_tokens_tenant", columnList = "tenant_id")
     ]
 )
 class RefreshTokenEntity(
@@ -29,6 +30,9 @@ class RefreshTokenEntity(
 
     @Column(name = "client_id", length = 255)
     val clientId: String? = null,
+
+    @Column(name = "tenant_id")
+    val tenantId: UUID? = null,
 
     @Column(name = "issued_at", nullable = false)
     val issuedAt: Instant,

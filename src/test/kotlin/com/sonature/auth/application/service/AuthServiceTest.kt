@@ -74,7 +74,7 @@ class AuthServiceTest {
         every { passwordEncoder.encode("password123") } returns "hashed-password"
         val userSlot = slot<UserEntity>()
         every { userRepository.save(capture(userSlot)) } answers { userSlot.captured }
-        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
+        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
 
         val (user, tokenPair) = authService.signup("test@example.com", "password123", "Test")
 
@@ -105,7 +105,7 @@ class AuthServiceTest {
         every { userRepository.findByEmail("test@example.com") } returns user
         every { passwordEncoder.matches("password123", "hashed") } returns true
         every { userRepository.save(any()) } returns user
-        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
+        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
 
         val (returnedUser, tokenPair) = authService.login("test@example.com", "password123")
 

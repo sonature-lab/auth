@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-14 - Sprint 3.4: 기존 기능 Tenant 격리
+
+### Completed
+- Domain Layer
+  - `RefreshTokenEntity` — tenantId (nullable UUID) 컬럼 추가, tenant 인덱스 추가
+  - `OAuth2ClientEntity` — tenantId (nullable UUID) 컬럼 추가, tenant 인덱스 추가
+  - `RefreshTokenRepository` — revokeAllBySubjectAndTenant() 쿼리 추가
+- Application Layer
+  - `RefreshTokenService` — storeRefreshToken/rotateToken에 tenantId 전달
+  - `TokenRefreshUseCase` — issueTokenPair에 tenantId 파라미터 추가
+- 테스트 작성
+  - `TenantIsolationIntegrationTest` (7 tests) — tenant 격리, 토큰 회전, cross-tenant 격리
+  - 기존 테스트 수정 (AuthServiceTest, OAuth2LoginSuccessHandlerTest mock 파라미터)
+  - 총 252개 테스트 전체 통과
+
+### Decisions Made
+1. **tenantId nullable**: 하위 호환 유지 — null이면 글로벌 컨텍스트
+2. **Token rotation preserves tenantId**: 회전 시 원래 토큰의 tenantId 유지
+3. **Tenant-scoped revocation**: 특정 tenant 내 토큰만 revoke 가능 (revokeAllBySubjectAndTenant)
+4. **Phase 3 완료**: 공개 저장소에서의 개발 완료, Phase 4+는 private repo (auth-enterprise)에서 진행
+
+---
+
 ## 2026-03-14 - Sprint 3.3: Authorization 적용
 
 ### Completed

@@ -6,12 +6,14 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.Table
 import java.time.Instant
+import java.util.UUID
 
 @Entity
 @Table(
     name = "oauth2_clients",
     indexes = [
-        Index(name = "idx_oauth2_clients_client_id", columnList = "clientId", unique = true)
+        Index(name = "idx_oauth2_clients_client_id", columnList = "clientId", unique = true),
+        Index(name = "idx_oauth2_clients_tenant", columnList = "tenant_id")
     ]
 )
 class OAuth2ClientEntity(
@@ -44,6 +46,9 @@ class OAuth2ClientEntity(
 
     @Column(name = "refresh_token_ttl_seconds", nullable = false)
     val refreshTokenTtlSeconds: Long = 604800,
+
+    @Column(name = "tenant_id")
+    val tenantId: UUID? = null,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now()

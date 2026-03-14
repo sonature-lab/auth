@@ -9,6 +9,7 @@ import com.sonature.auth.domain.token.model.TokenType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
+import java.util.UUID
 
 @Service
 class TokenRefreshUseCase(
@@ -21,6 +22,7 @@ class TokenRefreshUseCase(
         audience: String? = null,
         algorithm: Algorithm = Algorithm.HS256,
         clientId: String? = null,
+        tenantId: UUID? = null,
         accessExpiration: Duration = TokenConfig.DEFAULT_ACCESS_EXPIRATION,
         refreshExpiration: Duration = TokenConfig.DEFAULT_REFRESH_EXPIRATION,
         customClaims: Map<String, Any> = emptyMap()
@@ -40,7 +42,8 @@ class TokenRefreshUseCase(
             subject = subject,
             clientId = clientId,
             issuedAt = tokenPair.refreshToken.issuedAt,
-            expiresAt = tokenPair.refreshToken.expiresAt
+            expiresAt = tokenPair.refreshToken.expiresAt,
+            tenantId = tenantId
         )
 
         return tokenPair

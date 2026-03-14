@@ -71,14 +71,14 @@ class OAuth2LoginSuccessHandlerTest {
             "google"
         )
 
-        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
+        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
 
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()
 
         handler.onAuthenticationSuccess(request, response, authentication)
 
-        verify { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any()) }
+        verify { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any(), any()) }
         assertEquals(HttpServletResponse.SC_OK, response.status)
     }
 
@@ -102,7 +102,7 @@ class OAuth2LoginSuccessHandlerTest {
             "google"
         )
 
-        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
+        every { tokenRefreshUseCase.issueTokenPair(any(), any(), any(), any(), any(), any(), any(), any()) } returns mockTokenPair()
 
         val request = MockHttpServletRequest()
         val response = MockHttpServletResponse()

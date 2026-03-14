@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - AuthController (POST /api/v1/auth/signup, POST /api/v1/auth/login)
   - Auth exceptions (EmailAlreadyExists, InvalidCredentials, UserSuspended)
   - Unit tests (6) + Integration tests (7)
+- **Sprint 3.4**: Tenant Isolation
+  - RefreshTokenEntity: tenantId column for tenant-scoped tokens
+  - OAuth2ClientEntity: tenantId column for tenant-specific clients
+  - RefreshTokenRepository: revokeAllBySubjectAndTenant query
+  - RefreshTokenService/TokenRefreshUseCase: tenantId propagation
+  - Token rotation preserves tenantId
+  - Backward compatibility (null tenantId = global)
+  - Integration tests (7)
 - **Sprint 3.3**: Authorization Enforcement
   - TenantContext + TenantContextHolder (ThreadLocal tenant context)
   - TenantContextFilter (X-Tenant-Slug header + Bearer token → tenant context)

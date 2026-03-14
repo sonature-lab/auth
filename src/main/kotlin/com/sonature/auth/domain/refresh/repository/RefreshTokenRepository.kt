@@ -20,6 +20,10 @@ interface RefreshTokenRepository : JpaRepository<RefreshTokenEntity, UUID> {
     fun revokeAllBySubject(@Param("subject") subject: String, @Param("revokedAt") revokedAt: Instant): Int
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE RefreshTokenEntity r SET r.revokedAt = :revokedAt WHERE r.subject = :subject AND r.tenantId = :tenantId AND r.revokedAt IS NULL")
+    fun revokeAllBySubjectAndTenant(@Param("subject") subject: String, @Param("tenantId") tenantId: UUID, @Param("revokedAt") revokedAt: Instant): Int
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM RefreshTokenEntity r WHERE r.expiresAt < :now")
     fun deleteExpiredTokens(@Param("now") now: Instant): Int
 }

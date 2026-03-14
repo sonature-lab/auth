@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import java.security.MessageDigest
 import java.time.Instant
+import java.util.UUID
 
 @Service
 class RefreshTokenService(
@@ -28,13 +29,15 @@ class RefreshTokenService(
         subject: String,
         clientId: String?,
         issuedAt: Instant,
-        expiresAt: Instant
+        expiresAt: Instant,
+        tenantId: UUID? = null
     ): RefreshTokenEntity {
         val tokenHash = hashToken(tokenValue)
         val entity = RefreshTokenEntity(
             tokenHash = tokenHash,
             subject = subject,
             clientId = clientId,
+            tenantId = tenantId,
             issuedAt = issuedAt,
             expiresAt = expiresAt
         )
@@ -79,6 +82,7 @@ class RefreshTokenService(
             tokenHash = newTokenHash,
             subject = oldEntity.subject,
             clientId = oldEntity.clientId,
+            tenantId = oldEntity.tenantId,
             issuedAt = newIssuedAt,
             expiresAt = newExpiresAt
         )

@@ -6,10 +6,10 @@
 
 | 항목 | 상태 |
 |------|------|
-| Phase | **Phase 3 - Sprint 3.3 완료** |
-| 현재 진행률 | Phase 3: 75% (Sprint 3.1~3.3 완료, 3.4 남음) |
+| Phase | **Phase 3 완료** |
+| 현재 진행률 | Phase 3: 100% (Sprint 3.1~3.4 완료) |
 | 블로커 | 없음 |
-| 전체 테스트 | 245개 통과 |
+| 전체 테스트 | 252개 통과 |
 
 ---
 
@@ -69,7 +69,7 @@
 
 ---
 
-### Phase 3: Multi-tenant + RBAC (IN PROGRESS)
+### Phase 3: Multi-tenant + RBAC (DONE)
 
 | 기능 | 상태 | 테스트 | 비고 |
 |------|------|--------|------|
@@ -77,13 +77,13 @@
 | Tenant CRUD + 멤버 관리 | **Done** | 19 tests | /api/v1/tenants |
 | Role + Permission | **Done** | 25 tests | Sprint 3.2 (OWNER/ADMIN/MEMBER/VIEWER + 8 permissions) |
 | Authorization 적용 | **Done** | 26 tests | Sprint 3.3 (TenantContext + @RequirePermission + AOP) |
-| Tenant 격리 | Not Started | - | Sprint 3.4 예정 |
+| Tenant 격리 | **Done** | 7 tests | Sprint 3.4 (RefreshToken/OAuth2Client tenant_id, row-level isolation) |
 
 ---
 
 ## Test Coverage
 
-**테스트 현황**: 245개 전체 통과
+**테스트 현황**: 252개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -104,6 +104,7 @@
 | TenantContextFilter 단위 테스트 | 9 |
 | PermissionAspect 단위 테스트 | 6 |
 | Authorization 통합 테스트 | 11 |
+| Tenant 격리 통합 테스트 | 7 |
 
 ---
 
@@ -115,4 +116,4 @@
 
 ## Next Actions
 
-1. **Sprint 3.4**: 기존 기능 Tenant 격리
+Phase 3 완료. Phase 4+ 는 별도 private repository (`auth-enterprise`)에서 진행.

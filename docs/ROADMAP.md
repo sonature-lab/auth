@@ -93,7 +93,7 @@
 
 ---
 
-## Phase 3: Multi-tenant + RBAC (IN PROGRESS)
+## Phase 3: Multi-tenant + RBAC (DONE)
 
 ### Sprint 3.1 - Tenant Entity + Basic Management ✅
 - [x] TenantEntity (name, slug, plan, status)
@@ -122,10 +122,14 @@
 - [x] Authorization exceptions (InsufficientPermission, TenantContextRequired, InvalidAccessToken)
 - [x] Unit tests (15) + Integration tests (11+2)
 
-### Sprint 3.4 - Tenant Isolation
-- [ ] Add tenant association to existing entities
-- [ ] Row-level data isolation
-- [ ] Full integration tests
+### Sprint 3.4 - Tenant Isolation ✅
+- [x] RefreshTokenEntity: added `tenantId` column for tenant-scoped token management
+- [x] OAuth2ClientEntity: added `tenantId` column for tenant-specific OAuth2 clients
+- [x] RefreshTokenRepository: tenant-scoped revocation query
+- [x] RefreshTokenService: tenantId propagation through store and rotate
+- [x] TokenRefreshUseCase: tenantId parameter support
+- [x] Backward compatibility: null tenantId = global (no tenant restriction)
+- [x] Integration tests (7) — isolation, rotation, cross-tenant revocation
 
 ---
 
@@ -139,5 +143,5 @@
 |---------|--------|--------|
 | v0.1.0 | Phase 1 — Token Framework | **Done** |
 | v0.2.0 | Phase 2 — OAuth2 / Social Login / Consent | **Done** |
-| v0.3.0 | Phase 3 — Multi-tenant + RBAC | Upcoming |
+| v0.3.0 | Phase 3 — Multi-tenant + RBAC | **Done** |
 | v1.0.0 | Phase 4 — SSO Hub + Production Stable | Upcoming |
