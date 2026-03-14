@@ -131,6 +131,16 @@
 - [x] Backward compatibility: null tenantId = global (no tenant restriction)
 - [x] Integration tests (7) — isolation, rotation, cross-tenant revocation
 
+### Sprint 3.5 - Tenant Isolation Hardening ✅
+- [x] TenantContext: tenantId (UUID?) field added for runtime tenant identity
+- [x] TenantContextFilter: TenantRepository injection for slug → tenantId resolution
+- [x] TenantMismatchException: new exception for cross-tenant token refresh attempts
+- [x] TokenRefreshUseCase: cross-tenant validation (blocks Tenant A token in Tenant B context)
+- [x] Global token policy: tenantId=null tokens allowed in any tenant context (approved)
+- [x] OAuth2ClientRepository: 3 tenant-scoped query methods added
+- [x] RefreshTokenEntity: composite index idx_refresh_tokens_subject_tenant added
+- [x] Edge case integration tests (5) — total 257 tests passing
+
 ---
 
 > **Phase 4+** (SSO Hub, Advanced Security) is developed in a separate private repository.

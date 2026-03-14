@@ -7,9 +7,9 @@
 | 항목 | 상태 |
 |------|------|
 | Phase | **Phase 3 완료** |
-| 현재 진행률 | Phase 3: 100% (Sprint 3.1~3.4 완료) |
+| 현재 진행률 | Phase 3: 100% (Sprint 3.1~3.5 완료) |
 | 블로커 | 없음 |
-| 전체 테스트 | 252개 통과 |
+| 전체 테스트 | 257개 통과 |
 
 ---
 
@@ -78,12 +78,13 @@
 | Role + Permission | **Done** | 25 tests | Sprint 3.2 (OWNER/ADMIN/MEMBER/VIEWER + 8 permissions) |
 | Authorization 적용 | **Done** | 26 tests | Sprint 3.3 (TenantContext + @RequirePermission + AOP) |
 | Tenant 격리 | **Done** | 7 tests | Sprint 3.4 (RefreshToken/OAuth2Client tenant_id, row-level isolation) |
+| Tenant Isolation Hardening | **Done** | 5 tests | Sprint 3.5 (cross-tenant validation, OAuth2Client tenant-scoped queries, composite index) |
 
 ---
 
 ## Test Coverage
 
-**테스트 현황**: 252개 전체 통과
+**테스트 현황**: 257개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -104,7 +105,7 @@
 | TenantContextFilter 단위 테스트 | 9 |
 | PermissionAspect 단위 테스트 | 6 |
 | Authorization 통합 테스트 | 11 |
-| Tenant 격리 통합 테스트 | 7 |
+| Tenant 격리 통합 테스트 | 12 |
 
 ---
 
@@ -116,4 +117,4 @@
 
 ## Next Actions
 
-Phase 3 완료. Phase 4+ 는 별도 private repository (`auth-enterprise`)에서 진행.
+Phase 3 완료 (Sprint 3.1~3.5). Phase 4+ 는 별도 private repository (`auth-enterprise`)에서 진행.

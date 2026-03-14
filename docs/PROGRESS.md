@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-03-14 - Sprint 3.5: Tenant Isolation Hardening (P3-S005)
+
+### Completed
+- Domain Layer
+  - `TenantMismatchException` — 신규 생성 (cross-tenant token refresh 차단용)
+  - `TenantContext` — `tenantId: UUID?` 필드 추가 (런타임 tenant identity)
+- Infrastructure Layer
+  - `TenantContextFilter` — `TenantRepository` 주입, slug → tenantId 조회 로직 추가
+- Application Layer
+  - `TokenRefreshUseCase` — cross-tenant validation 로직 추가 (TenantMismatchException throw)
+  - 글로벌 토큰(tenantId=null)은 모든 tenant context에서 refresh 허용
+- Domain Repository
+  - `OAuth2ClientRepository` — 3개 tenant-scoped 쿼리 메서드 추가:
+    - `findByClientIdAndTenantId`
+    - `findByClientIdAndTenantIdIsNull` (글로벌 client 조회)
+    - `findAllByTenantId`
+- DB 인덱스
+  - `RefreshTokenEntity` — composite index `idx_refresh_tokens_subject_tenant` (subject + tenant_id)
+- 테스트 작성
+  - `TenantIsolationIntegrationTest` — 5개 엣지케이스 추가 (cross-tenant, global token, mixed revoke, OAuth2Client scoped)
+  - `TenantContextFilterTest` — TenantRepository mock 추가 (필터 변경 반영)
+  - 총 257개 테스트 전체 통과 (기존 252 + 신규 5)
+
+### Decisions Made
+1. **글로벌 토큰 허용 정책 (User 승인)**: `tenantId=null` 토큰은 어떤 tenant context에서도 refresh 허용. 관리자 토큰 등 tenant 비귀속 토큰의 운영 편의성 확보.
+2. **OAuth2Client 하위 호환**: 기존 `findByClientId` 메서드 변경 없이 신규 tenant-scoped 메서드 추가.
+3. **복합 인덱스**: `revokeAllBySubjectAndTenant` 쿼리 성능을 위해 subject+tenant_id 복합 인덱스 추가.
+4. **TenantContext 설계 변경**: `TenantContextFilter`가 TenantRepository에 의존하여 slug → tenantId 조회. Context 객체에 UUID를 직접 보유.
+
+### Changed Files
+```
+src/main/kotlin/.../tenant/exception/TenantMismatchException.kt (신규)
+src/main/kotlin/.../tenant/context/TenantContext.kt (수정)
+src/main/kotlin/.../security/TenantContextFilter.kt (수정)
+src/main/kotlin/.../usecase/TokenRefreshUseCase.kt (수정)
+src/main/kotlin/.../oauth2/repository/OAuth2ClientRepository.kt (수정)
+src/main/kotlin/.../refresh/entity/RefreshTokenEntity.kt (수정)
+src/test/.../tenant/TenantIsolationIntegrationTest.kt (수정)
+src/test/.../security/TenantContextFilterTest.kt (수정)
+```
+
+---
+
 ## 2026-03-14 - Sprint 3.4: 기존 기능 Tenant 격리
 
 ### Completed

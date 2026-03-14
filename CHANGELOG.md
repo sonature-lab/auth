@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Sprint 3.5**: Tenant Isolation Hardening
+  - TenantMismatchException: blocks cross-tenant token refresh attempts
+  - TenantContext: tenantId (UUID?) field for runtime tenant identity
+  - TenantContextFilter: slug → tenantId resolution via TenantRepository
+  - TokenRefreshUseCase: cross-tenant validation (Tenant A token rejected in Tenant B context)
+  - Global token policy: tenantId=null tokens permitted in any tenant context (approved)
+  - OAuth2ClientRepository: findByClientIdAndTenantId, findByClientIdAndTenantIdIsNull, findAllByTenantId
+  - RefreshTokenEntity: composite index idx_refresh_tokens_subject_tenant (subject + tenant_id)
+  - Integration tests (5 edge cases) — total 257 tests passing
 - **Sprint 2.1**: User Entity + Local Authentication
   - UserEntity (email, passwordHash, name, provider, status)
   - AuthProvider enum (LOCAL, GOOGLE, GITHUB, KAKAO)
