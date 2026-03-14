@@ -1,6 +1,6 @@
 # Project Status
 
-> 최종 업데이트: 2026-03-13
+> Last updated: 2026-03-14
 
 ## Overview
 

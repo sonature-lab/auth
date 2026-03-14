@@ -7,7 +7,9 @@
 
 [한국어](README.ko.md)
 
-A JWT/PASETO token issuance and verification framework with OAuth2 Authorization Server, designed as a shared authentication foundation for the Sonature ecosystem.
+A production-ready JWT/PASETO token framework and OAuth2 Authorization Server, designed as a shared authentication foundation for the Sonature ecosystem.
+
+### Core Features (v0.2.0)
 
 - **JWT Issuance & Verification** (HS256, RS256)
 - **PASETO v4 Support** (local, public)
@@ -18,6 +20,7 @@ A JWT/PASETO token issuance and verification framework with OAuth2 Authorization
 - **Consent UI** with customizable scopes
 - **Refresh Token Rotation**
 - **Rate Limiting**
+- **149 Tests** (unit + integration)
 - **TypeScript SDK** included
 
 ---
@@ -341,12 +344,11 @@ auth/
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| Phase 1 | JWT/PASETO Token Framework | Done |
-| Phase 2 | OAuth2 / Social Login | Done |
-| Phase 3 | Multi-tenant + RBAC | Planned |
-| Phase 4 | SSO Hub | Planned |
-| Phase 5 | Advanced Security (MFA, Audit Log) | Planned |
-| Phase 6 | Open Source + SaaS | Planned |
+| Phase 1 | JWT/PASETO Token Framework | **Done** |
+| Phase 2 | OAuth2 / Social Login / Consent | **Done** |
+| Phase 3 | Multi-tenant + RBAC | Upcoming |
+| Phase 4 | SSO Hub | Upcoming |
+| Phase 5 | Advanced Security (MFA, Audit Log) | Upcoming |
 
 See [ROADMAP.md](docs/ROADMAP.md) for details.
 

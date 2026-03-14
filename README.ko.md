@@ -7,7 +7,9 @@
 
 [English](README.md)
 
-JWT/PASETO 토큰 발급/검증 프레임워크 + OAuth2 Authorization Server. Sonature 생태계의 공통 인증 기반입니다.
+프로덕션 레디 JWT/PASETO 토큰 프레임워크 + OAuth2 Authorization Server. Sonature 생태계의 공통 인증 기반입니다.
+
+### 핵심 기능 (v0.2.0)
 
 - **JWT 발급/검증** (HS256, RS256)
 - **PASETO v4 지원** (local, public)
@@ -18,6 +20,7 @@ JWT/PASETO 토큰 발급/검증 프레임워크 + OAuth2 Authorization Server. S
 - **Consent UI** (커스텀 scope 관리)
 - **Refresh Token Rotation**
 - **Rate Limiting**
+- **149개 테스트** (단위 + 통합)
 - **TypeScript SDK** 기본 제공
 
 ---
@@ -341,12 +344,11 @@ auth/
 
 | Phase | 설명 | 상태 |
 |-------|------|------|
-| Phase 1 | JWT/PASETO 토큰 프레임워크 | 완료 |
-| Phase 2 | OAuth2 / 소셜 로그인 | 완료 |
+| Phase 1 | JWT/PASETO 토큰 프레임워크 | **완료** |
+| Phase 2 | OAuth2 / 소셜 로그인 / Consent | **완료** |
 | Phase 3 | 멀티테넌트 + RBAC | 예정 |
 | Phase 4 | SSO Hub | 예정 |
 | Phase 5 | 고급 보안 (MFA, Audit Log) | 예정 |
-| Phase 6 | 오픈소스 + SaaS | 예정 |
 
 자세한 내용은 [ROADMAP.md](docs/ROADMAP.md)를 참고하세요.
 

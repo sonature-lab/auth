@@ -1,6 +1,6 @@
 # Roadmap
 
-> 프로젝트 로드맵 및 진행 상황
+> Sonature Auth의 개발 로드맵입니다. Phase 1~2는 완료되어 현재 릴리스에 포함되어 있습니다.
 
 ---
 
@@ -49,7 +49,7 @@
 
 ---
 
-## Phase 2: OAuth2 / Social Login (IN PROGRESS)
+## Phase 2: OAuth2 / Social Login (DONE)
 
 ### Sprint 2.1 - User Entity + 기본 인증 ✅
 - [x] UserEntity (email, passwordHash, provider, status)
@@ -93,25 +93,23 @@
 
 ---
 
-## Phase 3: Multi-tenant + RBAC (PLANNED)
-- [ ] 테넌트(Organization) 관리
-- [ ] 테넌트별 격리된 RBAC (Row-level isolation)
-- [ ] Permission 기반 권한 체계
-- [ ] 테넌트별 API Key 발급/관리
+## Upcoming
 
-## Phase 4: SSO Hub (PLANNED)
-- [ ] 모든 Sonature 서비스 SSO 통합
-- [ ] Session 관리 + Cross-service 토큰 교환
-- [ ] Service Registry
+### Phase 3: Multi-tenant + RBAC
+- Tenant (Organization) management
+- Row-level isolation RBAC
+- Permission-based authorization
+- Tenant-scoped API Key management
 
-## Phase 5: Advanced Security (PLANNED)
-- [ ] MFA (TOTP, WebAuthn/Passkey)
-- [ ] Device fingerprinting + 이상 로그인 탐지
-- [ ] Audit Log, IP allowlist/blocklist
+### Phase 4: SSO Hub
+- Cross-service SSO integration
+- Session management + token exchange
+- Service Registry
 
-## Phase 6: Open Source + SaaS (PLANNED)
-- [ ] 오픈소스 Core 공개
-- [ ] SaaS Pro tier
+### Phase 5: Advanced Security
+- MFA (TOTP, WebAuthn/Passkey)
+- Device fingerprinting + anomaly detection
+- Audit Log, IP allowlist/blocklist
 
 ---
 
@@ -119,7 +117,7 @@
 
 | Version | Target | Status |
 |---------|--------|--------|
-| v0.1.0 | Phase 1 - Token Framework | Done |
-| v0.2.0 | Phase 2 - OAuth2 / Social Login | In Progress |
-| v0.3.0 | Phase 3 - Multi-tenant + RBAC | Planned |
-| v1.0.0 | Phase 4 - SSO Hub + Production Stable | Planned |
+| v0.1.0 | Phase 1 — Token Framework | **Done** |
+| v0.2.0 | Phase 2 — OAuth2 / Social Login / Consent | **Done** |
+| v0.3.0 | Phase 3 — Multi-tenant + RBAC | Upcoming |
+| v1.0.0 | Phase 4 — SSO Hub + Production Stable | Upcoming |
