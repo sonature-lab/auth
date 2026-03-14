@@ -2,6 +2,13 @@ spring:
   application:
     name: sonature-auth
 
+  threads:
+    virtual:
+      # Virtual Threads disabled: TenantContextHolder and JwtBearerAuthenticationFilter use
+      # ThreadLocal which is not safe with Virtual Threads (carrier thread reuse).
+      # To enable Virtual Threads, migrate these to ScopedValue (JDK 21+).
+      enabled: false
+
   profiles:
     active: dev
 
@@ -78,6 +85,14 @@ crypto:
     paseto-secret-key: ${PASETO_SECRET_KEY:}
     paseto-private-key: ${PASETO_PRIVATE_KEY:}
     paseto-public-key: ${PASETO_PUBLIC_KEY:}
+
+# OAuth2 Authorization Server
+auth:
+  oauth2:
+    issuer: ${AUTH_OAUTH2_ISSUER:http://localhost:8080}
+    jwk:
+      private-key: ${AUTH_JWK_PRIVATE_KEY:}
+      public-key: ${AUTH_JWK_PUBLIC_KEY:}
 
 # Logging
 logging:

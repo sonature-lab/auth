@@ -89,6 +89,13 @@ crypto:
       JwIDAQAB
       -----END PUBLIC KEY-----
 
+auth:
+  oauth2:
+    issuer: http://localhost:8080
+    jwk:
+      private-key:
+      public-key:
+
 logging:
   level:
     root: WARN

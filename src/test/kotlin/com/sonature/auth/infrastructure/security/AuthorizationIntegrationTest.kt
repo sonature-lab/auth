@@ -56,12 +56,14 @@ class AuthorizationIntegrationTest {
 
         tenantSlug = "auth-test-$ts"
 
-        // Create tenant with owner
+        // Create tenant with owner (auth required)
+        val setupToken = issueToken(owner, tenantSlug, TenantRole.OWNER)
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Auth Test", slug = tenantSlug, creatorUserId = owner.id.toString())
             )
+            header("Authorization", "Bearer $setupToken")
         }.andExpect { status { isCreated() } }
 
         // Add other members with proper roles using owner token
@@ -240,9 +242,12 @@ class AuthorizationIntegrationTest {
 
         @Test
         fun `request without tenant context returns 400`() {
+            // Authenticated but no X-Tenant-Slug header → TENANT_CONTEXT_REQUIRED
+            val token = issueToken(owner, tenantSlug, TenantRole.OWNER)
             mockMvc.post("/api/v1/tenants/$tenantSlug/members") {
                 contentType = MediaType.APPLICATION_JSON
                 content = objectMapper.writeValueAsString(AddMemberRequest(userId = outsider.id.toString()))
+                header("Authorization", "Bearer $token")
             }.andExpect {
                 status { isBadRequest() }
                 jsonPath("$.error.code") { value("TENANT_CONTEXT_REQUIRED") }

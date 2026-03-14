@@ -29,20 +29,33 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher
 import com.sonature.auth.infrastructure.oauth2.CustomOAuth2UserService
 import com.sonature.auth.infrastructure.oauth2.OAuth2LoginSuccessHandler
+import com.sonature.auth.infrastructure.security.JwtBearerAuthenticationFilter
 import com.sonature.auth.infrastructure.security.TenantContextFilter
+import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.HttpStatus
+import org.springframework.security.web.authentication.HttpStatusEntryPoint
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher
+import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 import java.time.Duration
+import java.util.Base64
 import java.util.UUID
 
 @Configuration
 class AuthorizationServerConfig(
     private val customOAuth2UserService: CustomOAuth2UserService,
     private val oAuth2LoginSuccessHandler: OAuth2LoginSuccessHandler,
-    private val tenantContextFilter: TenantContextFilter
+    private val tenantContextFilter: TenantContextFilter,
+    private val jwtBearerAuthenticationFilter: JwtBearerAuthenticationFilter,
+    @Value("\${auth.oauth2.issuer}") private val oauth2Issuer: String,
+    @Value("\${auth.oauth2.jwk.private-key:}") private val jwkPrivateKeyPem: String,
+    @Value("\${auth.oauth2.jwk.public-key:}") private val jwkPublicKeyPem: String
 ) {
 
     @Bean
@@ -75,7 +88,13 @@ class AuthorizationServerConfig(
         return http
             .csrf { it.disable() }
             .authorizeHttpRequests { auth ->
-                auth.requestMatchers("/api/v1/**").permitAll()
+                // Public auth endpoints
+                auth.requestMatchers("/api/v1/auth/**").permitAll()
+                auth.requestMatchers("/api/v1/jwt/**").permitAll()
+                auth.requestMatchers("/api/v1/paseto/**").permitAll()
+                // Tenant API requires authentication
+                auth.requestMatchers("/api/v1/tenants/**").authenticated()
+                // Dev/ops tools
                 auth.requestMatchers("/swagger-ui/**", "/api-docs/**", "/v3/api-docs/**").permitAll()
                 auth.requestMatchers("/h2-console/**").permitAll()
                 auth.requestMatchers("/actuator/**").permitAll()
@@ -85,7 +104,20 @@ class AuthorizationServerConfig(
             .headers { headers ->
                 headers.frameOptions { it.disable() }
             }
-            .addFilterBefore(tenantContextFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .exceptionHandling { exceptions ->
+                // API paths return 401 instead of redirecting to form login
+                exceptions.defaultAuthenticationEntryPointFor(
+                    HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED),
+                    AntPathRequestMatcher("/api/**")
+                )
+                // Browser/HTML paths redirect to form login
+                exceptions.defaultAuthenticationEntryPointFor(
+                    LoginUrlAuthenticationEntryPoint("/login"),
+                    MediaTypeRequestMatcher(MediaType.TEXT_HTML)
+                )
+            }
+            .addFilterBefore(jwtBearerAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterAfter(tenantContextFilter, JwtBearerAuthenticationFilter::class.java)
             .formLogin(Customizer.withDefaults())
             .oauth2Login { oauth2 ->
                 oauth2.userInfoEndpoint { userInfo ->
@@ -109,13 +141,13 @@ class AuthorizationServerConfig(
     @Bean
     fun authorizationServerSettings(): AuthorizationServerSettings {
         return AuthorizationServerSettings.builder()
-            .issuer("http://localhost:8080")
+            .issuer(oauth2Issuer)
             .build()
     }
 
     @Bean
     fun jwkSource(): JWKSource<SecurityContext> {
-        val keyPair = generateRsaKey()
+        val keyPair = loadOrGenerateRsaKey()
         val publicKey = keyPair.public as RSAPublicKey
         val privateKey = keyPair.private as RSAPrivateKey
         val rsaKey = RSAKey.Builder(publicKey)
@@ -129,6 +161,46 @@ class AuthorizationServerConfig(
     @Bean
     fun jwtDecoder(jwkSource: JWKSource<SecurityContext>): JwtDecoder {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource)
+    }
+
+    /**
+     * Loads RSA key pair from environment variables if provided, otherwise generates
+     * an in-memory key pair (development/test only).
+     *
+     * Production requires AUTH_JWK_PRIVATE_KEY and AUTH_JWK_PUBLIC_KEY to be set.
+     * Without persistent keys, server restarts invalidate existing OAuth2 tokens.
+     */
+    private fun loadOrGenerateRsaKey(): KeyPair {
+        if (jwkPrivateKeyPem.isNotBlank() && jwkPublicKeyPem.isNotBlank()) {
+            return loadRsaKeyPairFromPem(jwkPrivateKeyPem, jwkPublicKeyPem)
+        }
+        val logger = org.slf4j.LoggerFactory.getLogger(javaClass)
+        logger.warn(
+            "AUTH_JWK_PRIVATE_KEY / AUTH_JWK_PUBLIC_KEY not set. " +
+            "Generating in-memory RSA key pair — existing OAuth2 tokens will be invalidated on restart. " +
+            "Set these environment variables in production."
+        )
+        return generateRsaKey()
+    }
+
+    private fun loadRsaKeyPairFromPem(privatePem: String, publicPem: String): KeyPair {
+        val keyFactory = KeyFactory.getInstance("RSA")
+
+        val privateBytes = Base64.getDecoder().decode(
+            privatePem.replace("-----BEGIN PRIVATE KEY-----", "")
+                .replace("-----END PRIVATE KEY-----", "")
+                .replace("\\s".toRegex(), "")
+        )
+        val privateKey = keyFactory.generatePrivate(PKCS8EncodedKeySpec(privateBytes)) as RSAPrivateKey
+
+        val publicBytes = Base64.getDecoder().decode(
+            publicPem.replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replace("\\s".toRegex(), "")
+        )
+        val publicKey = keyFactory.generatePublic(X509EncodedKeySpec(publicBytes)) as RSAPublicKey
+
+        return KeyPair(publicKey, privateKey)
     }
 
     private fun generateRsaKey(): KeyPair {

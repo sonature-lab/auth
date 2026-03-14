@@ -23,6 +23,13 @@ jwt:
   access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
+auth:
+  oauth2:
+    issuer: ${AUTH_OAUTH2_ISSUER}
+    jwk:
+      private-key: ${AUTH_JWK_PRIVATE_KEY}
+      public-key: ${AUTH_JWK_PUBLIC_KEY}
+
 springdoc:
   api-docs:
     enabled: false

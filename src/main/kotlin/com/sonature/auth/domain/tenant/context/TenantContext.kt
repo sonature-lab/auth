@@ -10,6 +10,14 @@ data class TenantContext(
     val role: TenantRole
 )
 
+/**
+ * Thread-local holder for the current tenant context.
+ *
+ * ThreadLocal safety: this implementation is safe for traditional platform threads.
+ * If Virtual Threads (spring.threads.virtual.enabled=true) are enabled in the future,
+ * this must be migrated to use ScopedValue to avoid context leakage across carrier
+ * thread reuse. See application.yml for the current thread configuration.
+ */
 object TenantContextHolder {
 
     private val context = ThreadLocal<TenantContext?>()

@@ -70,6 +70,13 @@ class TenantControllerIntegrationTest {
         return token.value
     }
 
+    private fun issueBasicToken(userId: String): String {
+        return jwtService.issueAccessToken(
+            subject = userId,
+            customClaims = emptyMap()
+        ).value
+    }
+
     // --- POST /api/v1/tenants ---
 
     @Test
@@ -80,10 +87,12 @@ class TenantControllerIntegrationTest {
             slug = slug,
             plan = TenantPlan.FREE
         )
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect {
             status { isCreated() }
             jsonPath("$.data.name") { value("Test Tenant") }
@@ -103,10 +112,12 @@ class TenantControllerIntegrationTest {
             slug = slug,
             plan = TenantPlan.PRO
         )
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect {
             status { isCreated() }
             jsonPath("$.data.plan") { value("PRO") }
@@ -117,15 +128,18 @@ class TenantControllerIntegrationTest {
     fun `POST tenants with duplicate slug should return 409`() {
         val slug = "dup-slug-${System.nanoTime()}"
         val request = CreateTenantRequest(name = "First", slug = slug)
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect { status { isCreated() } }
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect {
             status { isConflict() }
             jsonPath("$.error.code") { value("TENANT_SLUG_ALREADY_EXISTS") }
@@ -135,10 +149,12 @@ class TenantControllerIntegrationTest {
     @Test
     fun `POST tenants with blank name should return 400`() {
         val request = mapOf("name" to "", "slug" to "valid-slug")
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect {
             status { isBadRequest() }
         }
@@ -150,10 +166,12 @@ class TenantControllerIntegrationTest {
             name = "Valid Name",
             slug = "INVALID SLUG!"
         )
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect {
             status { isBadRequest() }
         }
@@ -165,27 +183,32 @@ class TenantControllerIntegrationTest {
     fun `GET tenants by slug should return tenant`() {
         val slug = "get-tenant-${System.nanoTime()}"
         val createRequest = CreateTenantRequest(name = "Get Test", slug = slug)
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(createRequest)
+            header("Authorization", "Bearer $token")
         }.andExpect { status { isCreated() } }
 
-        mockMvc.get("/api/v1/tenants/$slug")
-            .andExpect {
-                status { isOk() }
-                jsonPath("$.data.slug") { value(slug) }
-                jsonPath("$.data.name") { value("Get Test") }
-            }
+        mockMvc.get("/api/v1/tenants/$slug") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.slug") { value(slug) }
+            jsonPath("$.data.name") { value("Get Test") }
+        }
     }
 
     @Test
     fun `GET tenants by nonexistent slug should return 404`() {
-        mockMvc.get("/api/v1/tenants/nonexistent-slug-12345")
-            .andExpect {
-                status { isNotFound() }
-                jsonPath("$.error.code") { value("TENANT_NOT_FOUND") }
-            }
+        val token = issueBasicToken(testUser.id.toString())
+        mockMvc.get("/api/v1/tenants/nonexistent-slug-12345") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isNotFound() }
+            jsonPath("$.error.code") { value("TENANT_NOT_FOUND") }
+        }
     }
 
     // --- POST /api/v1/tenants/{slug}/members (requires MEMBER_INVITE) ---
@@ -193,11 +216,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `POST members should add member and return 201`() {
         val slug = "member-tenant-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Member Test", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -220,11 +246,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `POST members without permission should return 403`() {
         val slug = "noperm-member-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "No Perm", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val viewerToken = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.VIEWER)
@@ -243,14 +272,19 @@ class TenantControllerIntegrationTest {
     @Test
     fun `POST members without tenant context should return 400`() {
         val slug = "nocontext-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(CreateTenantRequest(name = "No Context", slug = slug))
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
+        // Authenticated but no X-Tenant-Slug header => TENANT_CONTEXT_REQUIRED
         mockMvc.post("/api/v1/tenants/$slug/members") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(AddMemberRequest(userId = testUser.id.toString()))
+            header("Authorization", "Bearer $basicToken")
         }.andExpect {
             status { isBadRequest() }
             jsonPath("$.error.code") { value("TENANT_CONTEXT_REQUIRED") }
@@ -260,11 +294,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `POST members with duplicate user should return 409`() {
         val slug = "dup-member-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Dup Member Test", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -292,11 +329,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `GET members should return member list`() {
         val slug = "list-members-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "List Members", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -308,26 +348,31 @@ class TenantControllerIntegrationTest {
             header("X-Tenant-Slug", slug)
         }.andExpect { status { isCreated() } }
 
-        mockMvc.get("/api/v1/tenants/$slug/members")
-            .andExpect {
-                status { isOk() }
-                jsonPath("$.data.length()") { value(2) }
-            }
+        mockMvc.get("/api/v1/tenants/$slug/members") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.length()") { value(2) }
+        }
     }
 
     @Test
     fun `GET members of empty tenant should return empty list`() {
         val slug = "empty-tenant-${System.nanoTime()}"
+        val token = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(CreateTenantRequest(name = "Empty", slug = slug))
+            header("Authorization", "Bearer $token")
         }.andExpect { status { isCreated() } }
 
-        mockMvc.get("/api/v1/tenants/$slug/members")
-            .andExpect {
-                status { isOk() }
-                jsonPath("$.data.length()") { value(0) }
-            }
+        mockMvc.get("/api/v1/tenants/$slug/members") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.length()") { value(0) }
+        }
     }
 
     // --- DELETE /api/v1/tenants/{slug}/members/{userId} (requires MEMBER_REMOVE) ---
@@ -335,11 +380,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `DELETE member should remove and return 204`() {
         val slug = "del-member-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Del Member", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -358,21 +406,25 @@ class TenantControllerIntegrationTest {
             status { isNoContent() }
         }
 
-        mockMvc.get("/api/v1/tenants/$slug/members")
-            .andExpect {
-                status { isOk() }
-                jsonPath("$.data.length()") { value(1) }
-            }
+        mockMvc.get("/api/v1/tenants/$slug/members") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.length()") { value(1) }
+        }
     }
 
     @Test
     fun `DELETE non-member should return 404`() {
         val slug = "notmember-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Not Member", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -391,11 +443,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `PUT member role should change role and return 200`() {
         val slug = "role-change-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Role Change", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -422,11 +477,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `PUT member role for non-member should return 404`() {
         val slug = "role-nonmember-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Role Non Member", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -445,11 +503,14 @@ class TenantControllerIntegrationTest {
     @Test
     fun `PUT member role should persist the change`() {
         val slug = "role-persist-${System.nanoTime()}"
+        val basicToken = issueBasicToken(testUser.id.toString())
+
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(
                 CreateTenantRequest(name = "Role Persist", slug = slug, creatorUserId = testUser.id.toString())
             )
+            header("Authorization", "Bearer $basicToken")
         }.andExpect { status { isCreated() } }
 
         val token = issueTokenWithTenant(testUser.id.toString(), slug, TenantRole.OWNER)
@@ -468,11 +529,12 @@ class TenantControllerIntegrationTest {
             header("X-Tenant-Slug", slug)
         }.andExpect { status { isOk() } }
 
-        mockMvc.get("/api/v1/tenants/$slug/members")
-            .andExpect {
-                status { isOk() }
-                jsonPath("$.data[?(@.userId == '${secondUser.id}')].role") { value("OWNER") }
-            }
+        mockMvc.get("/api/v1/tenants/$slug/members") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data[?(@.userId == '${secondUser.id}')].role") { value("OWNER") }
+        }
     }
 
     // --- POST /api/v1/tenants with creatorUserId ---
@@ -486,21 +548,24 @@ class TenantControllerIntegrationTest {
             plan = TenantPlan.FREE,
             creatorUserId = testUser.id.toString()
         )
+        val token = issueBasicToken(testUser.id.toString())
 
         mockMvc.post("/api/v1/tenants") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(request)
+            header("Authorization", "Bearer $token")
         }.andExpect {
             status { isCreated() }
             jsonPath("$.data.slug") { value(slug) }
         }
 
-        mockMvc.get("/api/v1/tenants/$slug/members")
-            .andExpect {
-                status { isOk() }
-                jsonPath("$.data.length()") { value(1) }
-                jsonPath("$.data[0].userId") { value(testUser.id.toString()) }
-                jsonPath("$.data[0].role") { value("OWNER") }
-            }
+        mockMvc.get("/api/v1/tenants/$slug/members") {
+            header("Authorization", "Bearer $token")
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.data.length()") { value(1) }
+            jsonPath("$.data[0].userId") { value(testUser.id.toString()) }
+            jsonPath("$.data[0].role") { value("OWNER") }
+        }
     }
 }
