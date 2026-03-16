@@ -12,9 +12,9 @@ import java.util.UUID
 @Table(
     name = "refresh_tokens",
     indexes = [
-        Index(name = "idx_refresh_tokens_hash", columnList = "tokenHash", unique = true),
+        Index(name = "idx_refresh_tokens_hash", columnList = "token_hash", unique = true),
         Index(name = "idx_refresh_tokens_subject", columnList = "subject"),
-        Index(name = "idx_refresh_tokens_expires", columnList = "expiresAt"),
+        Index(name = "idx_refresh_tokens_expires", columnList = "expires_at"),
         Index(name = "idx_refresh_tokens_tenant", columnList = "tenant_id"),
         Index(name = "idx_refresh_tokens_subject_tenant", columnList = "subject, tenant_id")
     ]

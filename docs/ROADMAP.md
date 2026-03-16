@@ -141,6 +141,25 @@
 - [x] RefreshTokenEntity: composite index idx_refresh_tokens_subject_tenant added
 - [x] Edge case integration tests (5) — total 257 tests passing
 
+### Sprint 3.6 - Security Hardening ✅
+- [x] SecurityConfig permitAll 세분화 + JwtBearerAuthenticationFilter 추가
+- [x] JWK 키 외부화 (AUTH_JWK_PRIVATE_KEY/PUBLIC_KEY 환경변수)
+- [x] OAuth2 issuer 환경변수화 (AUTH_OAUTH2_ISSUER)
+- [x] TenantContextHolder ThreadLocal 안전성 (Virtual Threads 비활성 명시)
+- [x] 보안 테스트 14개 추가 — total 272 tests passing
+
+### Sprint 3.7 - Quality Fixes ✅
+- [x] TenantMismatchException 핸들러 추가 (500→403)
+- [x] UUID 포맷 DTO 검증 추가 (@Pattern)
+- [x] RefreshTokenService 단위 테스트 (10개)
+- [x] TokenRefreshUseCase 단위 테스트 (6개)
+- [x] PasetoV4LocalProvider TimeProvider 주입 (테스트 가능성 개선)
+- [x] cleanupExpiredTokens 스케줄링 (매일 03시)
+- [x] 미사용 DTO 정리 (AddMemberWithRoleRequest 제거)
+- [x] Index columnList DB 컬럼명 통일 (tokenHash→token_hash)
+- [x] N+1 쿼리 해결 (@EntityGraph fetch join)
+- [x] 총 290개 테스트 전체 통과
+
 ---
 
 > **Phase 4+** (SSO Hub, Advanced Security) is developed in a separate private repository.

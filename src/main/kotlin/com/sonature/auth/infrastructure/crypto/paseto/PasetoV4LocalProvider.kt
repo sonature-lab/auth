@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.sonature.auth.application.port.output.KeyManager
 import com.sonature.auth.application.port.output.TokenProvider
+import com.sonature.auth.common.util.TimeProvider
 import com.sonature.auth.domain.token.exception.TokenExpiredException
 import com.sonature.auth.domain.token.exception.TokenMalformedException
 import com.sonature.auth.domain.token.model.Algorithm
@@ -20,7 +21,8 @@ import javax.crypto.spec.SecretKeySpec
 @Component
 class PasetoV4LocalProvider(
     private val keyManager: KeyManager,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val timeProvider: TimeProvider
 ) : TokenProvider {
 
     override fun supportedAlgorithm(): Algorithm = Algorithm.PASETO_V4_LOCAL
@@ -72,7 +74,7 @@ class PasetoV4LocalProvider(
     private fun mapToTokenClaims(payload: Map<String, Any>): TokenClaims {
         val exp = Instant.parse(payload["exp"] as String)
 
-        if (Instant.now().isAfter(exp)) {
+        if (timeProvider.now().isAfter(exp)) {
             throw TokenExpiredException(
                 message = "The token has expired",
                 expiredAt = exp

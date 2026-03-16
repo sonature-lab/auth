@@ -4,6 +4,73 @@
 
 ---
 
+## 2026-03-16 - Sprint 3.7: Quality Fixes (P3-S007)
+
+### Completed
+- API Layer
+  - `GlobalExceptionHandler` — TenantMismatchException 핸들러 추가 (500→403)
+  - `TenantDto` — UUID 필드 검증 추가 (@Pattern), AddMemberWithRoleRequest 미사용 DTO 제거
+- Infrastructure Layer
+  - `PasetoV4LocalProvider` — TimeProvider 주입, Instant.now() 제거
+  - `RefreshTokenScheduler` (신규) — @Scheduled(cron = "0 0 3 * * *") 만료 토큰 자동 정리
+  - `SonatureAuthApplication` — @EnableScheduling 추가
+- Domain Layer
+  - `RefreshTokenEntity` — Index columnList DB 컬럼명 통일 (tokenHash→token_hash, expiresAt→expires_at)
+  - `TenantMembershipRepository` — @EntityGraph(attributePaths = ["tenant"]) N+1 해결
+- 테스트 작성
+  - `RefreshTokenServiceTest` (10 tests) — validateAndConsume, rotateToken, revoke, cleanup
+  - `TokenRefreshUseCaseTest` (6 tests) — 정상, cross-tenant 차단, 글로벌 토큰, no context
+  - `RefreshTokenSchedulerTest` (2 tests) — 스케줄러 동작 확인
+  - `PasetoV4LocalProviderTest` — TimeProvider mock 추가
+  - 총 290개 테스트 전체 통과 (기존 272 + 신규 18)
+
+### Changed Files
+```
+src/main/kotlin/.../api/common/GlobalExceptionHandler.kt (수정)
+src/main/kotlin/.../api/v1/tenant/dto/TenantDto.kt (수정)
+src/main/kotlin/.../infrastructure/crypto/paseto/PasetoV4LocalProvider.kt (수정)
+src/main/kotlin/.../infrastructure/scheduler/RefreshTokenScheduler.kt (신규)
+src/main/kotlin/.../SonatureAuthApplication.kt (수정)
+src/main/kotlin/.../domain/refresh/entity/RefreshTokenEntity.kt (수정)
+src/main/kotlin/.../domain/tenant/repository/TenantMembershipRepository.kt (수정)
+src/test/.../application/service/RefreshTokenServiceTest.kt (신규)
+src/test/.../application/usecase/TokenRefreshUseCaseTest.kt (신규)
+src/test/.../infrastructure/scheduler/RefreshTokenSchedulerTest.kt (신규)
+src/test/.../infrastructure/crypto/paseto/PasetoV4LocalProviderTest.kt (수정)
+```
+
+---
+
+## 2026-03-14 - Sprint 3.6: Security Hardening (P3-S006)
+
+### Completed
+- Infrastructure Layer
+  - `SecurityConfig` — permitAll 세분화 (/api/v1/auth/**, /jwt/**, /paseto/** 만 공개)
+  - `JwtBearerAuthenticationFilter` (신규) — Bearer JWT 인증 필터
+  - `AuthorizationServerConfig` — JWK 키 외부화 (AUTH_JWK_PRIVATE_KEY/PUBLIC_KEY 환경변수)
+  - `AuthorizationServerConfig` — OAuth2 issuer 환경변수화 (AUTH_OAUTH2_ISSUER)
+- Application Layer
+  - `TenantContextHolder` — Virtual Threads 비활성 명시 (spring.threads.virtual.enabled=false)
+- 테스트 작성
+  - `SecurityHardeningTest` (14 tests) — permitAll 검증, JWK 외부화, issuer 설정
+  - 총 272개 테스트 전체 통과 (기존 257 + 신규 14 + 조정)
+
+### Decisions Made
+1. **permitAll 세분화**: /api/v1/** 전체 → 공개 API만 허용, 나머지 authenticated
+2. **JWK 외부화**: 환경변수 기반, 개발 환경은 인메모리 fallback 유지
+3. **Virtual Threads**: 당분간 비활성 (ADR 작성), ThreadLocal 안전성 확보
+
+### Changed Files
+```
+src/main/kotlin/.../infrastructure/config/SecurityConfig.kt (수정)
+src/main/kotlin/.../infrastructure/security/JwtBearerAuthenticationFilter.kt (신규)
+src/main/kotlin/.../infrastructure/config/AuthorizationServerConfig.kt (수정)
+src/main/resources/application.yml (수정)
+src/test/.../infrastructure/config/SecurityHardeningTest.kt (신규)
+```
+
+---
+
 ## 2026-03-14 - Sprint 3.5: Tenant Isolation Hardening (P3-S005)
 
 ### Completed

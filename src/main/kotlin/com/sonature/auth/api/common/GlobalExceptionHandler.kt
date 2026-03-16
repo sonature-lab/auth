@@ -13,6 +13,7 @@ import com.sonature.auth.domain.tenant.exception.InsufficientPermissionException
 import com.sonature.auth.domain.tenant.exception.InvalidAccessTokenException
 import com.sonature.auth.domain.tenant.exception.NotTenantMemberException
 import com.sonature.auth.domain.tenant.exception.TenantContextRequiredException
+import com.sonature.auth.domain.tenant.exception.TenantMismatchException
 import com.sonature.auth.domain.tenant.exception.TenantNotFoundException
 import com.sonature.auth.domain.tenant.exception.TenantSlugAlreadyExistsException
 import com.sonature.auth.domain.user.exception.AuthException
@@ -165,6 +166,14 @@ class GlobalExceptionHandler {
     fun handleNotTenantMember(ex: NotTenantMemberException): ResponseEntity<ApiResponse<Nothing>> {
         val error = ApiError(code = ex.errorCode, message = ex.message)
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(ApiResponse.error(error))
+    }
+
+    @ExceptionHandler(TenantMismatchException::class)
+    fun handleTenantMismatch(ex: TenantMismatchException): ResponseEntity<ApiResponse<Nothing>> {
+        logger.warn("Tenant mismatch: ${ex.message}")
+        val error = ApiError(code = ex.errorCode, message = ex.message)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
             .body(ApiResponse.error(error))
     }
 

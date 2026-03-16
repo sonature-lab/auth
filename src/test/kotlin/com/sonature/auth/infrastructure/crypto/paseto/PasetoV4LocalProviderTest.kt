@@ -2,6 +2,7 @@ package com.sonature.auth.infrastructure.crypto.paseto
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.sonature.auth.application.port.output.KeyManager
+import com.sonature.auth.common.util.TimeProvider
 import com.sonature.auth.domain.token.exception.TokenExpiredException
 import com.sonature.auth.domain.token.exception.TokenMalformedException
 import com.sonature.auth.domain.token.model.Algorithm
@@ -22,8 +23,11 @@ import kotlin.test.assertTrue
 class PasetoV4LocalProviderTest {
 
     private lateinit var keyManager: KeyManager
+    private lateinit var timeProvider: TimeProvider
     private lateinit var provider: PasetoV4LocalProvider
     private lateinit var secretKey: SecretKeySpec
+
+    private val now = Instant.now()
 
     @BeforeEach
     fun setUp() {
@@ -32,10 +36,12 @@ class PasetoV4LocalProviderTest {
         secretKey = SecretKeySpec(keyBytes, "XChaCha20")
 
         keyManager = mockk()
+        timeProvider = mockk()
         every { keyManager.getSigningKey(Algorithm.PASETO_V4_LOCAL) } returns secretKey
         every { keyManager.getVerificationKey(Algorithm.PASETO_V4_LOCAL) } returns secretKey
+        every { timeProvider.now() } returns now
 
-        provider = PasetoV4LocalProvider(keyManager, jacksonObjectMapper())
+        provider = PasetoV4LocalProvider(keyManager, jacksonObjectMapper(), timeProvider)
     }
 
     @Test

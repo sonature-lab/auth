@@ -8,6 +8,9 @@ import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 import java.time.Instant
 
+private const val UUID_REGEX =
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+
 data class CreateTenantRequest(
     @field:NotBlank(message = "Name is required")
     @field:Size(max = 100, message = "Name must be at most 100 characters")
@@ -23,6 +26,7 @@ data class CreateTenantRequest(
 
     val plan: TenantPlan = TenantPlan.FREE,
 
+    @field:Pattern(regexp = UUID_REGEX, message = "creatorUserId must be a valid UUID")
     val creatorUserId: String? = null
 )
 
@@ -37,14 +41,8 @@ data class TenantResponse(
 
 data class AddMemberRequest(
     @field:NotBlank(message = "userId is required")
+    @field:Pattern(regexp = UUID_REGEX, message = "userId must be a valid UUID")
     val userId: String
-)
-
-data class AddMemberWithRoleRequest(
-    @field:NotBlank(message = "userId is required")
-    val userId: String,
-
-    val role: TenantRole = TenantRole.MEMBER
 )
 
 data class ChangeMemberRoleRequest(
