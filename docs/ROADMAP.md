@@ -160,6 +160,14 @@
 - [x] N+1 쿼리 해결 (@EntityGraph fetch join)
 - [x] 총 290개 테스트 전체 통과
 
+### Sprint 3.8 - Design Decisions ✅
+- [x] ADR-002: 소셜 로그인 계정 연결 정책 (현행 유지, Phase 4에서 재설계)
+- [x] ADR-003: Refresh Token 동시성 제어 (SELECT FOR UPDATE 비관적 잠금)
+- [x] ADR-004: Rate Limiting (Bucket4j 인메모리, IP 기반 10~20 req/min)
+- [x] ADR-005: Tenant slug 캐싱 (Caffeine, TTL 5분, 최대 100 엔트리)
+- [x] RateLimitFilter 단위 테스트 (7개)
+- [x] 총 298개 테스트 전체 통과
+
 ---
 
 > **Phase 4+** (SSO Hub, Advanced Security) is developed in a separate private repository.

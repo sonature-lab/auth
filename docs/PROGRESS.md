@@ -4,6 +4,61 @@
 
 ---
 
+## 2026-03-17 - Sprint 3.8: Design Decisions (P3-S008)
+
+### Completed
+- Infrastructure Layer
+  - `RateLimitFilter` (신규) — Bucket4j IP 기반 Rate Limiting
+    - `/api/v1/jwt/issue-pair`: 10 req/min
+    - `/api/v1/jwt/refresh`: 20 req/min
+    - `/api/v1/auth/**`: 10 req/min
+    - 429 Too Many Requests + Retry-After 헤더
+  - `CacheConfig` (신규) — Caffeine 캐시 설정 (@EnableCaching, TTL 5분, 최대 100)
+  - `AuthorizationServerConfig` — RateLimitFilter 등록
+- Domain Layer
+  - `RefreshTokenRepository` — `findByTokenHashForUpdate()` 추가 (@Lock PESSIMISTIC_WRITE)
+- Application Layer
+  - `RefreshTokenService` — `findByTokenHash()` → `findByTokenHashForUpdate()` 변경 (TOCTOU 해결)
+  - `TenantService` — `getTenantBySlug()`에 @Cacheable, `createTenant()`에 @CacheEvict
+  - `TenantContextFilter` — TenantRepository 직접 호출 → TenantService 경유 (캐시 활용)
+- ADR 작성
+  - ADR-002: 소셜 로그인 계정 연결 정책 (현행 유지, Phase 4 보류)
+  - ADR-003: Refresh Token SELECT FOR UPDATE (비관적 잠금)
+  - ADR-004: Bucket4j 인메모리 Rate Limiting
+  - ADR-005: Caffeine Tenant slug 캐싱
+- 테스트 작성
+  - `RateLimitFilterTest` (7 tests) — 정상 통과, 429 응답, 다른 IP 독립, X-Forwarded-For
+  - 기존 통합 테스트 4개에 `@BeforeEach rateLimitFilter.clearBuckets()` 추가
+  - 총 298개 테스트 전체 통과 (기존 290 + 신규 8)
+
+### Decisions Made
+1. **소셜 로그인**: 현행 자동 연결 유지, Phase 4에서 이메일 인증과 함께 재설계
+2. **동시성 제어**: SELECT FOR UPDATE — 단일 VM에서 확실한 잠금, 보안 우선
+3. **Rate Limiting**: Bucket4j 인메모리 — 외부 의존 없이 단일 인스턴스에 적합
+4. **캐싱**: Caffeine — Spring Cache 표준, TTL/사이즈 자동 관리
+
+### Changed Files
+```
+build.gradle (수정 — bucket4j-core, spring-boot-starter-cache, caffeine 추가)
+src/main/kotlin/.../infrastructure/config/CacheConfig.kt (신규)
+src/main/kotlin/.../infrastructure/security/RateLimitFilter.kt (신규)
+src/main/kotlin/.../infrastructure/config/AuthorizationServerConfig.kt (수정)
+src/main/kotlin/.../domain/refresh/repository/RefreshTokenRepository.kt (수정)
+src/main/kotlin/.../application/service/RefreshTokenService.kt (수정)
+src/main/kotlin/.../application/service/TenantService.kt (수정)
+src/main/kotlin/.../infrastructure/security/TenantContextFilter.kt (수정)
+src/test/kotlin/.../infrastructure/security/RateLimitFilterTest.kt (신규)
+src/test/kotlin/.../infrastructure/security/TenantContextFilterTest.kt (수정)
+src/test/kotlin/.../application/service/RefreshTokenServiceTest.kt (수정)
+```
+
+### Notes
+- Phase 3 전체 완료 (Sprint 3.1~3.8, 8개 스프린트)
+- Phase Gate 통과: HIGH 0건, 298 테스트, SSOT 14/14, ADR 5건
+- Phase 4+는 auth-enterprise private repo에서 진행 예정
+
+---
+
 ## 2026-03-16 - Sprint 3.7: Quality Fixes (P3-S007)
 
 ### Completed

@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Sprint 3.8**: Design Decisions
+  - ADR-003: Refresh Token SELECT FOR UPDATE (pessimistic locking for TOCTOU fix)
+  - ADR-004: Bucket4j in-memory rate limiting (IP-based, 10-20 req/min)
+  - ADR-005: Caffeine tenant slug caching (5min TTL, max 100 entries)
+  - ADR-002: Social login linking policy deferred to Phase 4
+  - RateLimitFilter with 429 + Retry-After response
+  - CacheConfig with @EnableCaching + CaffeineCacheManager
+  - RateLimitFilterTest (7 tests) — total 298 tests passing
+- **Sprint 3.7**: Quality Fixes
+  - TenantMismatchException handler (500→403 Forbidden)
+  - UUID format DTO validation (@Pattern)
+  - RefreshTokenService unit tests (10 cases)
+  - TokenRefreshUseCase unit tests (6 cases)
+  - PasetoV4LocalProvider TimeProvider injection
+  - cleanupExpiredTokens @Scheduled (daily 03:00)
+  - Removed unused AddMemberWithRoleRequest DTO
+  - Fixed Index columnList to DB column names (token_hash, expires_at)
+  - N+1 query fix with @EntityGraph fetch join
+  - RefreshTokenSchedulerTest (2 tests) — total 290 tests passing
+- **Sprint 3.6**: Security Hardening
+  - SecurityConfig permitAll narrowed (only /api/v1/auth/**, /jwt/**, /paseto/**)
+  - JwtBearerAuthenticationFilter for Bearer JWT authentication
+  - JWK key externalization (AUTH_JWK_PRIVATE_KEY/PUBLIC_KEY env vars)
+  - OAuth2 issuer externalization (AUTH_OAUTH2_ISSUER env var)
+  - Virtual Threads disabled (ThreadLocal safety)
+  - SecurityHardeningTest (14 tests) — total 272 tests passing
 - **Sprint 3.5**: Tenant Isolation Hardening
   - TenantMismatchException: blocks cross-tenant token refresh attempts
   - TenantContext: tenantId (UUID?) field for runtime tenant identity

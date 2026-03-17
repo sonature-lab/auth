@@ -9,7 +9,7 @@
 
 프로덕션 레디 JWT/PASETO 토큰 프레임워크 + OAuth2 Authorization Server. Sonature 생태계의 공통 인증 기반입니다.
 
-### 핵심 기능 (v0.2.0)
+### 핵심 기능 (v0.3.0)
 
 - **JWT 발급/검증** (HS256, RS256)
 - **PASETO v4 지원** (local, public)
@@ -18,9 +18,12 @@
 - **소셜 로그인** (Google, GitHub, Kakao)
 - **OIDC 지원** (Discovery, JWK Set)
 - **Consent UI** (커스텀 scope 관리)
-- **Refresh Token Rotation**
-- **Rate Limiting**
-- **149개 테스트** (단위 + 통합)
+- **멀티테넌트** (Row-level Isolation)
+- **RBAC** (4개 역할, 8개 권한 기반 접근 제어)
+- **Refresh Token Rotation** (비관적 잠금)
+- **Rate Limiting** (Bucket4j, IP 기반)
+- **Tenant Slug 캐싱** (Caffeine)
+- **298개 테스트** (단위 + 통합)
 - **TypeScript SDK** 기본 제공
 
 ---

@@ -9,7 +9,7 @@
 
 A production-ready JWT/PASETO token framework and OAuth2 Authorization Server, designed as a shared authentication foundation for the Sonature ecosystem.
 
-### Core Features (v0.2.0)
+### Core Features (v0.3.0)
 
 - **JWT Issuance & Verification** (HS256, RS256)
 - **PASETO v4 Support** (local, public)
@@ -18,9 +18,12 @@ A production-ready JWT/PASETO token framework and OAuth2 Authorization Server, d
 - **Social Login** (Google, GitHub, Kakao)
 - **OIDC Support** (Discovery, JWK Set)
 - **Consent UI** with customizable scopes
-- **Refresh Token Rotation**
-- **Rate Limiting**
-- **149 Tests** (unit + integration)
+- **Multi-tenant** with Row-level Isolation
+- **RBAC** (Role-Based Access Control with 4 roles, 8 permissions)
+- **Refresh Token Rotation** with Pessimistic Locking
+- **Rate Limiting** (Bucket4j, IP-based)
+- **Tenant Slug Caching** (Caffeine)
+- **298 Tests** (unit + integration)
 - **TypeScript SDK** included
 
 ---
@@ -110,6 +113,17 @@ open http://localhost:8080/swagger-ui/index.html
 | `/health` | GET | Health check |
 | `/metrics` | GET | Prometheus metrics |
 
+### Multi-tenant
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/tenants` | POST | Create tenant |
+| `/api/v1/tenants/{slug}` | GET | Get tenant by slug |
+| `/api/v1/tenants/{slug}/members` | POST | Add member |
+| `/api/v1/tenants/{slug}/members` | GET | List members |
+| `/api/v1/tenants/{slug}/members/{userId}` | DELETE | Remove member |
+| `/api/v1/tenants/{slug}/members/{userId}/role` | PUT | Change member role |
+
 ### Example: Signup & Login
 
 ```bash
@@ -177,6 +191,9 @@ curl -X POST http://localhost:8080/api/v1/jwt/issue \
 | `PASETO_SECRET_KEY` | PASETO v4.local key | For PASETO |
 | `PASETO_PRIVATE_KEY` | Ed25519 private key | For PASETO public |
 | `API_KEYS` | Allowed API keys (comma-separated) | Yes |
+| `AUTH_JWK_PRIVATE_KEY` | JWK RSA private key (PEM) | Prod only |
+| `AUTH_JWK_PUBLIC_KEY` | JWK RSA public key (PEM) | Prod only |
+| `AUTH_OAUTH2_ISSUER` | OAuth2 issuer URL | Prod only |
 | `DATABASE_URL` | PostgreSQL JDBC URL | Prod only |
 | `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID | For Social Login |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth2 Client Secret | For Social Login |
@@ -283,14 +300,16 @@ auth/
 │   │   ├── usecase/              # TokenRefreshUseCase
 │   │   └── port/output/          # TokenProvider, KeyManager interfaces
 │   ├── infrastructure/
-│   │   ├── config/               # Security, AuthorizationServer, UserDetails
+│   │   ├── config/               # Security, AuthorizationServer, Cache
 │   │   ├── crypto/               # JWT/PASETO providers, key management
-│   │   └── oauth2/               # Social login, OAuth2 user service
+│   │   ├── oauth2/               # Social login, OAuth2 user service
+│   │   ├── security/             # Filters (RateLimit, TenantContext, JwtBearer)
+│   │   └── scheduler/            # Token cleanup scheduler
 │   └── api/
-│       ├── v1/                   # REST controllers (auth, jwt, paseto)
+│       ├── v1/                   # REST controllers (auth, jwt, paseto, tenants)
 │       └── oauth2/               # ConsentController
 ├── src/main/resources/templates/ # Thymeleaf templates (consent)
-├── src/test/kotlin/              # 149 tests (unit + integration)
+├── src/test/kotlin/              # 298 tests (unit + integration)
 ├── docs/                         # Documentation
 └── build.gradle
 ```
@@ -318,7 +337,7 @@ auth/
 # Build
 ./gradlew build
 
-# Test (149 tests)
+# Test (298 tests)
 ./gradlew test
 
 # Coverage report
@@ -346,9 +365,9 @@ auth/
 |-------|-------------|--------|
 | Phase 1 | JWT/PASETO Token Framework | **Done** |
 | Phase 2 | OAuth2 / Social Login / Consent | **Done** |
-| Phase 3 | Multi-tenant + RBAC | Upcoming |
+| Phase 3 | Multi-tenant + RBAC | **Done** |
 
-> Phase 4+ (SSO Hub, Advanced Security) is developed in a separate repository.
+> Phase 4+ (SSO Hub, Advanced Security) is developed in a separate private repository.
 
 See [ROADMAP.md](docs/ROADMAP.md) for details.
 

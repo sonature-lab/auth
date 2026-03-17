@@ -1,15 +1,15 @@
 # Project Status
 
-> Last updated: 2026-03-16
+> Last updated: 2026-03-17
 
 ## Overview
 
 | 항목 | 상태 |
 |------|------|
-| Phase | **Phase 3 완료** |
-| 현재 진행률 | Phase 3: 100% (Sprint 3.1~3.7 완료) |
+| Phase | **Phase 3 완료 (Closed)** |
+| 현재 진행률 | Phase 3: 100% (Sprint 3.1~3.8 완료) |
 | 블로커 | 없음 |
-| 전체 테스트 | 290개 통과 |
+| 전체 테스트 | 298개 통과 |
 
 ---
 
@@ -81,12 +81,13 @@
 | Tenant Isolation Hardening | **Done** | 5 tests | Sprint 3.5 (cross-tenant validation, OAuth2Client tenant-scoped queries, composite index) |
 | Security Hardening | **Done** | 14 tests | Sprint 3.6 (permitAll 세분화, JWK 외부화, issuer 환경변수화, ThreadLocal 안전성) |
 | Quality Fixes | **Done** | 18 tests | Sprint 3.7 (에러 핸들링, DTO 검증, 테스트 보강, 스케줄링, N+1 해결) |
+| Design Decisions | **Done** | 8 tests | Sprint 3.8 (SELECT FOR UPDATE, Bucket4j Rate Limiting, Caffeine 캐싱, ADR 4건) |
 
 ---
 
 ## Test Coverage
 
-**테스트 현황**: 290개 전체 통과
+**테스트 현황**: 298개 전체 통과
 
 | 카테고리 | 테스트 수 |
 |----------|----------|
@@ -112,6 +113,8 @@
 | RefreshTokenService 단위 테스트 | 10 |
 | TokenRefreshUseCase 단위 테스트 | 6 |
 | RefreshTokenScheduler 단위 테스트 | 2 |
+| RateLimitFilter 단위 테스트 | 7 |
+| TenantContextFilter 단위 테스트 (캐싱 업데이트) | 1 |
 
 ---
 
@@ -123,4 +126,4 @@
 
 ## Next Actions
 
-Phase 3 완료 (Sprint 3.1~3.7). Sprint 3.8 (Design Decisions, 4건 User 승인 필요) 후 Phase 4+는 별도 private repository (`auth-enterprise`)에서 진행.
+Phase 3 완료 (Sprint 3.1~3.8 전체). Phase 4+는 별도 private repository (`auth-enterprise`)에서 진행 예정.
