@@ -3,6 +3,8 @@ package com.sonature.auth.api.v1.jwt
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.sonature.auth.api.v1.jwt.dto.JwtIssueRequest
 import com.sonature.auth.api.v1.jwt.dto.JwtRefreshRequest
+import com.sonature.auth.infrastructure.security.RateLimitFilter
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -22,6 +24,14 @@ class JwtRefreshIntegrationTest {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var rateLimitFilter: RateLimitFilter
+
+    @BeforeEach
+    fun resetRateLimits() {
+        rateLimitFilter.clearBuckets()
+    }
 
     @Test
     fun `POST issue-pair should return both access and refresh tokens`() {

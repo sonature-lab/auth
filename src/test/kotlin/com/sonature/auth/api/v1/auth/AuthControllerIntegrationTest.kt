@@ -3,6 +3,8 @@ package com.sonature.auth.api.v1.auth
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.sonature.auth.api.v1.auth.dto.LoginRequest
 import com.sonature.auth.api.v1.auth.dto.SignupRequest
+import com.sonature.auth.infrastructure.security.RateLimitFilter
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -22,6 +24,14 @@ class AuthControllerIntegrationTest {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var rateLimitFilter: RateLimitFilter
+
+    @BeforeEach
+    fun resetRateLimits() {
+        rateLimitFilter.clearBuckets()
+    }
 
     @Test
     fun `POST signup should create user and return tokens`() {

@@ -30,6 +30,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher
 import com.sonature.auth.infrastructure.oauth2.CustomOAuth2UserService
 import com.sonature.auth.infrastructure.oauth2.OAuth2LoginSuccessHandler
 import com.sonature.auth.infrastructure.security.JwtBearerAuthenticationFilter
+import com.sonature.auth.infrastructure.security.RateLimitFilter
 import com.sonature.auth.infrastructure.security.TenantContextFilter
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpStatus
@@ -53,6 +54,7 @@ class AuthorizationServerConfig(
     private val oAuth2LoginSuccessHandler: OAuth2LoginSuccessHandler,
     private val tenantContextFilter: TenantContextFilter,
     private val jwtBearerAuthenticationFilter: JwtBearerAuthenticationFilter,
+    private val rateLimitFilter: RateLimitFilter,
     @Value("\${auth.oauth2.issuer}") private val oauth2Issuer: String,
     @Value("\${auth.oauth2.jwk.private-key:}") private val jwkPrivateKeyPem: String,
     @Value("\${auth.oauth2.jwk.public-key:}") private val jwkPublicKeyPem: String
@@ -116,6 +118,7 @@ class AuthorizationServerConfig(
                     MediaTypeRequestMatcher(MediaType.TEXT_HTML)
                 )
             }
+            .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterBefore(jwtBearerAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
             .addFilterAfter(tenantContextFilter, JwtBearerAuthenticationFilter::class.java)
             .formLogin(Customizer.withDefaults())

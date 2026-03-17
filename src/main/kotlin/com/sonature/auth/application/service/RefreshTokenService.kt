@@ -49,7 +49,7 @@ class RefreshTokenService(
         val tokenHash = hashToken(tokenValue)
         val now = timeProvider.now()
 
-        val entity = refreshTokenRepository.findByTokenHash(tokenHash)
+        val entity = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
             ?: throw RefreshTokenRevokedException("Refresh token not found")
 
         if (entity.isRevoked()) {

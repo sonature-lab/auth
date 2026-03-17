@@ -12,6 +12,9 @@ import com.sonature.auth.domain.tenant.repository.TenantMembershipRepository
 import com.sonature.auth.domain.tenant.repository.TenantRepository
 import com.sonature.auth.domain.user.exception.UserNotFoundException
 import com.sonature.auth.domain.user.repository.UserRepository
+import com.sonature.auth.infrastructure.config.CacheConfig
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
@@ -25,6 +28,7 @@ class TenantService(
 ) {
 
     @Transactional
+    @CacheEvict(cacheNames = [CacheConfig.TENANT_SLUG_CACHE], key = "#slug")
     fun createTenant(name: String, slug: String, plan: TenantPlan, creatorUserId: UUID? = null): TenantEntity {
         if (tenantRepository.existsBySlug(slug)) {
             throw TenantSlugAlreadyExistsException(slug)
@@ -52,6 +56,7 @@ class TenantService(
         return savedTenant
     }
 
+    @Cacheable(cacheNames = [CacheConfig.TENANT_SLUG_CACHE], key = "#slug")
     fun getTenantBySlug(slug: String): TenantEntity {
         return tenantRepository.findBySlug(slug)
             ?: throw TenantNotFoundException(slug)

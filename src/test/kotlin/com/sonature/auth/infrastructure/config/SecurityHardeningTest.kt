@@ -1,5 +1,7 @@
 package com.sonature.auth.infrastructure.config
 
+import com.sonature.auth.infrastructure.security.RateLimitFilter
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,8 +34,16 @@ class SecurityHardeningTest {
     @Autowired
     private lateinit var authorizationServerSettings: AuthorizationServerSettings
 
+    @Autowired
+    private lateinit var rateLimitFilter: RateLimitFilter
+
     @Value("\${auth.oauth2.issuer}")
     private lateinit var configuredIssuer: String
+
+    @BeforeEach
+    fun resetRateLimits() {
+        rateLimitFilter.clearBuckets()
+    }
 
     // T001: Tenant API authentication enforcement
 

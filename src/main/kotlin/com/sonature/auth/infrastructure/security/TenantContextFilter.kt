@@ -1,10 +1,11 @@
 package com.sonature.auth.infrastructure.security
 
 import com.sonature.auth.application.service.JwtService
+import com.sonature.auth.application.service.TenantService
 import com.sonature.auth.domain.tenant.context.TenantContext
 import com.sonature.auth.domain.tenant.context.TenantContextHolder
+import com.sonature.auth.domain.tenant.exception.TenantNotFoundException
 import com.sonature.auth.domain.tenant.model.TenantRole
-import com.sonature.auth.domain.tenant.repository.TenantRepository
 import com.sonature.auth.domain.token.model.Algorithm
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -17,7 +18,7 @@ import java.util.UUID
 @Component
 class TenantContextFilter(
     private val jwtService: JwtService,
-    private val tenantRepository: TenantRepository
+    private val tenantService: TenantService
 ) : OncePerRequestFilter() {
 
     private val log = LoggerFactory.getLogger(javaClass)
@@ -41,7 +42,11 @@ class TenantContextFilter(
                     val role = tenantRoles[tenantSlug]
 
                     if (role != null) {
-                        val tenantId = tenantRepository.findBySlug(tenantSlug)?.id
+                        val tenantId = try {
+                            tenantService.getTenantBySlug(tenantSlug).id
+                        } catch (e: TenantNotFoundException) {
+                            null
+                        }
                         TenantContextHolder.set(
                             TenantContext(
                                 tenantSlug = tenantSlug,

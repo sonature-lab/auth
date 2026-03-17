@@ -51,7 +51,7 @@ class RefreshTokenServiceTest {
     fun `validateAndConsume should return entity when token is valid`() {
         val tokenValue = "valid-refresh-token"
         val entity = buildActiveEntity(subject, tenantId)
-        every { refreshTokenRepository.findByTokenHash(any()) } returns entity
+        every { refreshTokenRepository.findByTokenHashForUpdate(any()) } returns entity
 
         val result = refreshTokenService.validateAndConsume(tokenValue)
 
@@ -62,7 +62,7 @@ class RefreshTokenServiceTest {
 
     @Test
     fun `validateAndConsume should throw RefreshTokenRevokedException when token not found`() {
-        every { refreshTokenRepository.findByTokenHash(any()) } returns null
+        every { refreshTokenRepository.findByTokenHashForUpdate(any()) } returns null
 
         assertThrows<RefreshTokenRevokedException> {
             refreshTokenService.validateAndConsume("nonexistent-token")
@@ -76,7 +76,7 @@ class RefreshTokenServiceTest {
             expiresAt = now.minusSeconds(60),
             revokedAt = null
         )
-        every { refreshTokenRepository.findByTokenHash(any()) } returns expiredEntity
+        every { refreshTokenRepository.findByTokenHashForUpdate(any()) } returns expiredEntity
 
         assertThrows<TokenExpiredException> {
             refreshTokenService.validateAndConsume("expired-token")
@@ -90,7 +90,7 @@ class RefreshTokenServiceTest {
             expiresAt = now.plusSeconds(3600),
             revokedAt = now.minusSeconds(10)
         )
-        every { refreshTokenRepository.findByTokenHash(any()) } returns revokedEntity
+        every { refreshTokenRepository.findByTokenHashForUpdate(any()) } returns revokedEntity
         every { refreshTokenRepository.revokeAllBySubject(subject, now) } returns 2
 
         assertThrows<RefreshTokenReusedException> {

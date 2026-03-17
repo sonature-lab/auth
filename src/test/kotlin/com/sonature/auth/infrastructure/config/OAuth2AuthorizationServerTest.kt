@@ -2,6 +2,7 @@ package com.sonature.auth.infrastructure.config
 
 import com.sonature.auth.api.v1.auth.dto.SignupRequest
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.sonature.auth.infrastructure.security.RateLimitFilter
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,8 +25,12 @@ class OAuth2AuthorizationServerTest {
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
+    @Autowired
+    private lateinit var rateLimitFilter: RateLimitFilter
+
     @BeforeEach
     fun setUp() {
+        rateLimitFilter.clearBuckets()
         // Create a test user for login
         val request = SignupRequest(
             email = "oauth-test@example.com",

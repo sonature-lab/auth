@@ -1,9 +1,12 @@
 package com.sonature.auth.infrastructure.security
 
 import com.sonature.auth.application.service.JwtService
+import com.sonature.auth.application.service.TenantService
 import com.sonature.auth.domain.tenant.context.TenantContextHolder
+import com.sonature.auth.domain.tenant.entity.TenantEntity
+import com.sonature.auth.domain.tenant.exception.TenantNotFoundException
+import com.sonature.auth.domain.tenant.model.TenantPlan
 import com.sonature.auth.domain.tenant.model.TenantRole
-import com.sonature.auth.domain.tenant.repository.TenantRepository
 import com.sonature.auth.domain.token.model.TokenClaims
 import com.sonature.auth.domain.token.model.TokenType
 import com.sonature.auth.domain.token.model.Algorithm
@@ -23,9 +26,18 @@ import java.util.UUID
 class TenantContextFilterTest {
 
     private val jwtService = mockk<JwtService>()
-    private val tenantRepository = mockk<TenantRepository>(relaxed = true)
-    private val filter = TenantContextFilter(jwtService, tenantRepository)
+    private val tenantService = mockk<TenantService>(relaxed = true)
+    private val filter = TenantContextFilter(jwtService, tenantService)
     private val filterChain = mockk<FilterChain>(relaxed = true)
+
+    private val tenantId = UUID.randomUUID()
+
+    private fun buildTenantEntity(slug: String): TenantEntity = TenantEntity(
+        id = tenantId,
+        name = slug,
+        slug = slug,
+        plan = TenantPlan.FREE
+    )
 
     @AfterEach
     fun cleanup() {
@@ -41,7 +53,7 @@ class TenantContextFilterTest {
         }
         val response = MockHttpServletResponse()
 
-        every { tenantRepository.findBySlug("my-org") } returns null
+        every { tenantService.getTenantBySlug("my-org") } returns buildTenantEntity("my-org")
 
         every { jwtService.verifyToken("valid-token", Algorithm.HS256) } returns TokenClaims(
             subject = userId.toString(),
@@ -114,8 +126,6 @@ class TenantContextFilterTest {
         }
         val response = MockHttpServletResponse()
 
-        every { tenantRepository.findBySlug("other-org") } returns null
-
         every { jwtService.verifyToken("valid-token", Algorithm.HS256) } returns TokenClaims(
             subject = userId.toString(),
             issuer = "sonature-auth",
@@ -184,6 +194,44 @@ class TenantContextFilterTest {
 
         assertNull(capturedContext)
         verify { filterChain.doFilter(any(), any()) }
+    }
+
+    @Test
+    fun `tenant not found in service results in null tenantId in context`() {
+        val userId = UUID.randomUUID()
+        val request = MockHttpServletRequest().apply {
+            addHeader("X-Tenant-Slug", "ghost-org")
+            addHeader("Authorization", "Bearer valid-token")
+        }
+        val response = MockHttpServletResponse()
+
+        every { tenantService.getTenantBySlug("ghost-org") } throws TenantNotFoundException("ghost-org")
+
+        every { jwtService.verifyToken("valid-token", Algorithm.HS256) } returns TokenClaims(
+            subject = userId.toString(),
+            issuer = "sonature-auth",
+            issuedAt = Instant.now(),
+            expiresAt = Instant.now().plusSeconds(900),
+            audience = null,
+            tokenType = TokenType.ACCESS,
+            tokenId = UUID.randomUUID().toString(),
+            customClaims = mapOf(
+                "tenants" to listOf(
+                    mapOf("slug" to "ghost-org", "role" to "MEMBER")
+                )
+            )
+        )
+
+        var capturedContext: com.sonature.auth.domain.tenant.context.TenantContext? = null
+        every { filterChain.doFilter(any(), any()) } answers {
+            capturedContext = TenantContextHolder.get()
+        }
+
+        filter.doFilter(request, response, filterChain)
+
+        assertNotNull(capturedContext)
+        assertNull(capturedContext!!.tenantId)
+        assertEquals("ghost-org", capturedContext!!.tenantSlug)
     }
 
     @Test
